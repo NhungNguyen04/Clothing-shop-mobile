@@ -1,26 +1,36 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#333333',
+    background: '#FFFFFF',
+    tint: '#C2185B',  // Example: Rose pink as primary color
+    tabIconDefault: '#CCCCCC',
+    tabIconSelected: '#C2185B',
+    border: '#EEEEEE',
+    notification: '#F50057',
+    card: '#FFFFFF',
+    primary: '#C2185B',
+    secondary: '#7B1FA2',
+    accent: '#FFC107',
+    error: '#F44336',
+    warning: '#FF9800',
+    success: '#4CAF50',
+    inactive: '#9E9E9E',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#F5F5F5',
+    background: '#121212',
+    tint: '#F48FB1',  // Lighter pink for dark mode
+    tabIconDefault: '#777777',
+    tabIconSelected: '#F48FB1',
+    border: '#272729',
+    notification: '#FF80AB',
+    card: '#1C1C1E',
+    primary: '#F48FB1',
+    secondary: '#CE93D8',
+    accent: '#FFD54F',
+    error: '#EF9A9A',
+    warning: '#FFCC80',
+    success: '#A5D6A7',
+    inactive: '#757575',
   },
 };

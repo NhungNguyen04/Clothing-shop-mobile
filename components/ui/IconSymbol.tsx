@@ -13,6 +13,14 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'list.and.film': 'collections',
+  'list.bullet': 'format-list-bulleted',
+  'contact.sensor.fill': 'mail',
+  'cart': 'shopping-cart',
+  'heart.fill': 'favorite',
+  'star.fill': 'star',
+  'magnifyingglass': 'search',
+  'person': 'person',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],
@@ -39,5 +47,5 @@ export function IconSymbol({
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <MaterialIcons color={color} size={size} name={MAPPING[name]} />;
 }
