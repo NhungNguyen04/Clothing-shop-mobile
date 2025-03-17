@@ -2,7 +2,7 @@ export const Colors = {
   light: {
     text: '#333333',
     background: '#FFFFFF',
-    tint: '#C2185B',  // Example: Rose pink as primary color
+    tint: '#C2185B', 
     tabIconDefault: '#CCCCCC',
     tabIconSelected: '#C2185B',
     border: '#EEEEEE',
@@ -18,7 +18,7 @@ export const Colors = {
   },
   dark: {
     text: '#F5F5F5',
-    background: '#121212',
+    background: '#1E201E',
     tint: '#F48FB1',  // Lighter pink for dark mode
     tabIconDefault: '#777777',
     tabIconSelected: '#F48FB1',

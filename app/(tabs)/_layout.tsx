@@ -10,7 +10,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Extract TopNavigation as a separate component
 const TopNavigation = ({ colorScheme = 'light' as 'light' | 'dark' }) => (
-  <View style={styles.topNavContainer}>
+  <View style={[
+    styles.topNavContainer,
+    {backgroundColor: Colors[colorScheme].background}
+    ]}>
     <View style={styles.logoContainer}>
       <Image 
         source={require('@/assets/logo.png')} 
@@ -19,14 +22,8 @@ const TopNavigation = ({ colorScheme = 'light' as 'light' | 'dark' }) => (
       />
     </View>
     <View style={styles.actionsContainer}>
-      <Pressable onPress={() => {}} style={styles.iconButton} >
-        <IconSymbol size={24} name="magnifyingglass" color={Colors[colorScheme].tabIconSelected} />
-      </Pressable>
       <Pressable onPress={() => {}} style={styles.iconButton}>
         <IconSymbol size={24} name="cart" color={Colors[colorScheme].tabIconSelected} />
-      </Pressable>
-      <Pressable onPress={() => {}} style={styles.iconButton}>
-        <IconSymbol size={24} name="person" color={Colors[colorScheme].tabIconSelected} />
       </Pressable>
     </View>
   </View>
@@ -51,8 +48,8 @@ export default function TabLayout() {
           },
           default: {},
         }),
-        backgroundColor: Colors[colorScheme].background,
-      }
+        backgroundColor: Colors[colorScheme].background
+        },
       }}>
       <Tabs.Screen
         name="index"
@@ -69,17 +66,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="about"
+        name="profile"
         options={{
-          title: 'About',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name='list.bullet' color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="contact"
-        options={{
-          title: 'Contact',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name='contact.sensor.fill' color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name='person' color={color} />,
         }}
       />
     </Tabs>
