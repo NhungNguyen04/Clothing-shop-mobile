@@ -1,4 +1,4 @@
-package com.nhclothing.app
+package com.yourcompany.clothingshop
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
