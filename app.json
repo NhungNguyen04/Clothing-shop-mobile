@@ -2,6 +2,20 @@
   "expo": {
     "name": "clothing-shop",
     "slug": "clothing-shop",
+    "fonts": [
+      {
+        "asset": "./assets/fonts/Outfit-Regular.ttf",
+        "family": "Outfit"
+      },
+      {
+        "asset": "./assets/fonts/Outfit-Bold.ttf",
+        "family": "Outfit-Bold"
+      },
+      {
+        "asset": "./assets/fonts/Outfit-Medium.ttf",
+        "family": "Outfit-Medium"
+      }
+    ],
     "bundler": "metro",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -35,7 +49,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

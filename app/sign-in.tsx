@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Image, ScrollView, Text, View, TextInput, TouchableOpacity, Alert, Linking } from "react-native"
+import { Image, ScrollView, Text, View, TextInput, TouchableOpacity, Alert, Linking, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/context/AuthContext"
-import { AuthService } from "@/src/auth-service"
+import { AuthenticationService } from "@/services/authentication"
 import * as WebBrowser from "expo-web-browser"
+import { LinearGradient } from "expo-linear-gradient"
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated"
 
 // Initialize WebBrowser for OAuth
 WebBrowser.maybeCompleteAuthSession()
@@ -18,77 +20,14 @@ const SignInPage = () => {
   const router = useRouter()
   const { login } = useAuth()
 
-  // Handle deep links when app is already open
   useEffect(() => {
-    const handleDeepLink = async (event: { url: string }) => {
-      const url = event.url
-      if (url.includes("token=")) {
-        try {
-          // Extract token from URL
-          const token = url.split("token=")[1].split("&")[0]
-
-          // Check if there's user data in the URL
-          let userData = null
-          if (url.includes("user=")) {
-            try {
-              const userDataStr = url.split("user=")[1].split("&")[0]
-              userData = JSON.parse(decodeURIComponent(userDataStr))
-            } catch (e) {
-              console.error("Error parsing user data from URL:", e)
-            }
-          }
-
-          // If we don't have user data, we'll need to decode the JWT token
-          if (!userData) {
-            try {
-              const base64Url = token.split(".")[1]
-              const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-              const jsonPayload = decodeURIComponent(
-                atob(base64)
-                  .split("")
-                  .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-                  .join(""),
-              )
-
-              const payload = JSON.parse(jsonPayload)
-              userData = {
-                id: payload.sub,
-                email: payload.email,
-                name: payload.name || "User",
-              }
-            } catch (e) {
-              console.error("Error decoding JWT:", e)
-              // Fallback user data
-              userData = {
-                id: "unknown",
-                email: "user@example.com",
-                name: "User",
-              }
-            }
-          }
-
-          await login({ access_token: token, user: userData })
-          router.push("/(tabs)")
-        } catch (error) {
-          console.error("Error processing deep link:", error)
-          Alert.alert("Authentication Error", "Failed to complete authentication")
-        }
-      }
-    }
-
-    // Add listener for deep links
-    const subscription = Linking.addEventListener("url", handleDeepLink as any)
-
-    // Check if app was opened from a deep link
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink({ url })
-      }
+    // Setup deep link handler for authentication callbacks
+    const cleanup = AuthenticationService.setupDeepLinkHandler(async (authData) => {
+      await login(authData)
+      router.push("/(tabs)")
     })
-
-    return () => {
-      subscription.remove()
-    }
+    
+    return cleanup
   }, [login, router])
 
   const handleSignIn = async () => {
@@ -99,29 +38,14 @@ const SignInPage = () => {
 
     setIsLoading(true)
     try {
-      const response = await fetch("https://clothing-shop-be-production.up.railway.app/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      })
+      const result = await AuthenticationService.login(email, password)
 
-      const data = await response.json()
-
-      if (!data.access_token) {
-        Alert.alert("Error", data.message || "Login failed")
-        return
+      if (result.success && result.data) {
+        await login(result.data)
+        router.push("/(tabs)")
+      } else {
+        Alert.alert("Error", result.error || "Login failed")
       }
-
-      // Use the context to store authentication data
-      await login(data)
-
-      // Navigate to home screen
-      router.push("/(tabs)")
     } catch (error) {
       console.error("Login error:", error)
       Alert.alert("Error", "An error occurred during sign in. Please try again.")
@@ -133,7 +57,7 @@ const SignInPage = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      const result = await AuthService.loginWithGoogle()
+      const result = await AuthenticationService.loginWithGoogle()
 
       if (result.success && result.data) {
         await login(result.data)
@@ -156,95 +80,154 @@ const SignInPage = () => {
   const handleForgotPassword = () => {
     router.push("/password-reset")
   }
-
-  // Add this function to your SignInPage component
-  const testDeepLink = async () => {
-    const result = await AuthService.testDeepLink()
-    if (result) {
-      Alert.alert("Success", "Deep linking is working!")
-    } else {
-      Alert.alert("Error", "Deep linking is not working. Please check your app configuration.")
-    }
-  }
-
+  
   return (
-    <SafeAreaView className="h-full">
-      <ScrollView contentContainerClassName="h-full justify-center items-center px-6">
-        <Image source={require("../assets/logo.png")} resizeMode="contain" className="w-3/5 h-32" />
-
-        <View className="w-full mb-6">
-          <Text className="text-2xl font-bold text-center uppercase text-pink-500">Welcome to Nh-Clothing</Text>
-          <Text className="text-gray-500 text-center mt-2 text-base">Style Made Simple – Shop, Try, Love!</Text>
-        </View>
-
-        <View className="w-full rounded-xl bg-white p-6 shadow-md">
-          <View className="mb-4">
-            <Text className="text-gray-700 mb-2 font-medium ml-1">Email</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-base"
-              placeholder="Enter your email"
-              placeholderTextColor="#9ca3af"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
+    <LinearGradient 
+      colors={['#f9f9f9', '#ffe1f0']} 
+      className="h-full"
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView className="h-full">
+        <ScrollView 
+          contentContainerClassName="h-full justify-center items-center px-6 py-8"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeInDown.duration(800).springify()} className="items-center">
+            <Image 
+              source={require("../assets/logo.png")} 
+              resizeMode="contain" 
+              className="w-4/5 h-36" 
             />
-          </View>
+          </Animated.View>
 
-          <View className="mb-2">
-            <Text className="text-gray-700 mb-2 font-medium ml-1">Password</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-base"
-              placeholder="Enter your password"
-              placeholderTextColor="#9ca3af"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!isLoading}
-            />
-          </View>
+          <Animated.View entering={FadeInDown.delay(200).duration(800).springify()} className="w-full mb-8">
+            <Text className="text-3xl font-outfit-bold text-center text-pink-600">
+              Welcome Back!
+            </Text>
+            <Text className="font-outfit text-gray-600 text-center mt-2 text-base">
+              Style Made Simple – Shop, Try, Love!
+            </Text>
+          </Animated.View>
 
-          <TouchableOpacity className="mb-6" onPress={handleForgotPassword} disabled={isLoading}>
-            <Text className="text-pink-500 text-right font-medium">Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`bg-pink-500 py-3 rounded-lg mb-4 ${isLoading ? "opacity-70" : ""}`}
-            onPress={handleSignIn}
-            disabled={isLoading}
+          <Animated.View 
+            entering={FadeInUp.delay(400).duration(800).springify()}
+            className="w-full rounded-2xl bg-white p-7 shadow-xl" 
+            style={{ 
+              shadowColor: "#ff8dc7",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.2,
+              shadowRadius: 20,
+              elevation: 5,
+            }}
           >
-            <Text className="text-white text-center font-bold text-lg">{isLoading ? "Signing In..." : "Sign In"}</Text>
-          </TouchableOpacity>
+            <View className="mb-5">
+              <Text className="font-outfit-medium text-gray-700 mb-2 ml-1 text-base">Email</Text>
+              <View className="flex-row items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50">
+                <Image 
+                  source={{ uri: "https://cdn-icons-png.flaticon.com/512/561/561127.png" }} 
+                  style={{ width: 20, height: 20 }}
+                  className="mr-3 opacity-60"
+                />
+                <TextInput
+                  className="flex-1 text-base text-gray-800 font-outfit"
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9ca3af"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
 
-          <View className="flex-row justify-center mb-4">
-            <Text className="text-gray-600">Don't have an account? </Text>
-            <TouchableOpacity onPress={handleRegister} disabled={isLoading}>
-              <Text className="text-pink-500 font-bold">Register</Text>
+            <View className="mb-3">
+              <Text className="font-outfit-medium text-gray-700 mb-2 ml-1 text-base">Password</Text>
+              <View className="flex-row items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50">
+                <Image 
+                  source={{ uri: "https://cdn-icons-png.flaticon.com/512/3064/3064155.png" }} 
+                  style={{ width: 20, height: 20 }}
+                  className="mr-3 opacity-60"
+                />
+                <TextInput
+                  className="flex-1 text-base text-gray-800 font-outfit"
+                  placeholder="Enter your password"
+                  placeholderTextColor="#9ca3af"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity className="mb-7" onPress={handleForgotPassword} disabled={isLoading}>
+              <Text className="text-pink-500 text-right font-outfit-medium">Forgot Password?</Text>
             </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity
-            className={`border border-gray-300 flex-row justify-center items-center py-3 rounded-lg ${isLoading ? "opacity-70" : ""}`}
-            onPress={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            <Image
-              source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }}
-              style={{ width: 20, height: 20 }}
-              className="mr-2"
-            />
-            <Text className="text-gray-700 font-medium">{isLoading ? "Signing In..." : "Sign In with Google"}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleSignIn}
+              disabled={isLoading}
+              className="rounded-xl overflow-hidden"
+            >
+              <LinearGradient
+                colors={['#f472b6', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="py-3.5 rounded-xl mb-5"
+                style={{borderRadius: 12}}
+              >
+                {isLoading ? (
+                  <View className="flex-row justify-center items-center">
+                    <ActivityIndicator size="small" color="#ffffff" />
+                    <Text className="font-outfit-bold text-white text-center text-lg ml-2">Signing In...</Text>
+                  </View>
+                ) : (
+                  <Text className="font-outfit-bold text-white text-center text-lg">Sign In</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
 
-          <TouchableOpacity className="mt-2 py-2 border border-gray-300 rounded-lg" onPress={testDeepLink}>
-            <Text className="text-center text-gray-700">Test Deep Link</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <View className="flex-row justify-center mb-5">
+              <Text className="font-outfit text-gray-600">Don't have an account? </Text>
+              <TouchableOpacity onPress={handleRegister} disabled={isLoading}>
+                <Text className="font-outfit-bold text-pink-600">Register</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              className={`border border-gray-200 flex-row justify-center items-center py-3.5 rounded-xl bg-white ${isLoading ? "opacity-70" : ""}`}
+              style={{ 
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 5,
+                elevation: 2,
+              }}
+              activeOpacity={0.8}
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <Image
+                source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }}
+                style={{ width: 22, height: 22 }}
+                className="mr-3"
+              />
+              <Text className="font-outfit-medium text-gray-700">{isLoading ? "Signing In..." : "Continue with Google"}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+          
+          <Animated.View entering={FadeInUp.delay(600).duration(800)} className="mt-6">
+            <Text className="font-outfit text-gray-500 text-center text-xs">
+              By signing in, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   )
 }
 
 export default SignInPage
-
