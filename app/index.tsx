@@ -66,7 +66,7 @@ export default function HomePage() {
             <Text className="font-outfit-bold text-pink-500 text-center text-lg">Sign In</Text>
           </TouchableOpacity>
           
-          <Text className="text-gray-500 text-center mt-10">
+          <Text className="font-outfit text-gray-500 text-center mt-10">
             Discover fashion that speaks your language
           </Text>
         </View>

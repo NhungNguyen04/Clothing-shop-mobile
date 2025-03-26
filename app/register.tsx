@@ -186,7 +186,7 @@ const RegisterPage = () => {
               {isLoading ? (
                 <Text className='text-gray-700 font-outfit-medium'>Processing...</Text>
               ) : (
-                <Text className='text-gray-700 font-outfit-medium'>Sign In with Google</Text>
+                <Text className='text-gray-700 font-outfit-medium'>Continue with Google</Text>
               )}
             </TouchableOpacity>
           </View>

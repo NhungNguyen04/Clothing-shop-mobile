@@ -1,6 +1,6 @@
-import { Tabs, useRouter } from 'expo-router';
+import { router, Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, View, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import { Platform, View, StyleSheet, Pressable, Image, Dimensions, TouchableOpacity } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -22,9 +22,9 @@ const TopNavigation = ({ colorScheme = 'light' as 'light' | 'dark' }) => (
       />
     </View>
     <View style={styles.actionsContainer}>
-      <Pressable onPress={() => {}} style={styles.iconButton}>
+      <TouchableOpacity onPress={() => {router.navigate("/cart")}} style={styles.iconButton}>
         <IconSymbol size={24} name="cart" color={Colors[colorScheme].tabIconSelected} />
-      </Pressable>
+      </TouchableOpacity>
     </View>
   </View>
 );

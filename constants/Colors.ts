@@ -2,13 +2,13 @@ export const Colors = {
   light: {
     text: '#333333',
     background: '#FFFFFF',
-    tint: '#C2185B', 
+    tint: '#ec4899', 
     tabIconDefault: '#CCCCCC',
-    tabIconSelected: '#C2185B',
+    tabIconSelected: '#ec4899',
     border: '#EEEEEE',
     notification: '#F50057',
     card: '#FFFFFF',
-    primary: '#C2185B',
+    primary: '#ec4899',
     secondary: '#7B1FA2',
     accent: '#FFC107',
     error: '#F44336',
@@ -19,13 +19,13 @@ export const Colors = {
   dark: {
     text: '#F5F5F5',
     background: '#1E201E',
-    tint: '#F48FB1',  // Lighter pink for dark mode
+    tint: '#ec4899',  // Lighter pink for dark mode
     tabIconDefault: '#777777',
-    tabIconSelected: '#F48FB1',
+    tabIconSelected: '#ec4899',
     border: '#272729',
     notification: '#FF80AB',
     card: '#1C1C1E',
-    primary: '#F48FB1',
+    primary: '#ec4899',
     secondary: '#CE93D8',
     accent: '#FFD54F',
     error: '#EF9A9A',

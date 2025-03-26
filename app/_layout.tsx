@@ -38,6 +38,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{headerShown: false}} />
           <Stack.Screen name="register" options={{headerShown: false}} />
+          <Stack.Screen name='product/[id]' options={{headerShown: false}} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </AuthProvider>

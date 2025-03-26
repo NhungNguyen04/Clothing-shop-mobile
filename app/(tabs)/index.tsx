@@ -1,34 +1,96 @@
-import { Image, StyleSheet, Platform, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  ScrollView,
+  StyleSheet, 
+  SafeAreaView, 
+  StatusBar,
+  RefreshControl,
+  Text
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import FashionHero from '@/components/Hero';
+import ProductGrid from '@/components/ProductGrid';
+import { Product, fetchRecentProducts } from '@/services/product';
+import { router } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { SafeAreaView } from 'react-native-safe-area-context';
+const HomeScreen = () => {
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation();
 
-export default function HomeScreen() {
+  const loadProducts = async (isRefreshing = false) => {
+    try {
+      if (!isRefreshing) {
+        setLoading(true);
+      }
+      const products = await fetchRecentProducts(10);
+      setRecentProducts(products);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load products');
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadProducts(true);
+  };
+
+  const handleProductPress = (product: Product) => {
+    router.push({
+      pathname: "/product/[id]",
+      params: { id: product.id }
+    });
+  };
+
   return (
-    <SafeAreaView>
-      <Text>Home page</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <FashionHero />
+        <View className='mt-10 flex-row ml-2'>
+          <Text className='font-outfit-medium text-xl'>OUR BESTSELLERS</Text>
+          <View style={styles.line} />
+        </View>
+        <ProductGrid
+          products={recentProducts}
+          loading={loading}
+          error={error}
+          onProductPress={handleProductPress}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  line: {
+    width: 100,
+    height: 1,
+    backgroundColor: '#9ca3af',
+    marginTop: 10,
+    marginLeft: 8,
   },
 });
+
+export default HomeScreen;
