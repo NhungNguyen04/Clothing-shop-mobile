@@ -1,5 +1,7 @@
 // Product.ts - Types and API functions for products
 
+import axiosInstance from "./axiosInstance";
+
 // Define the types based on the API response
 export interface SizeStock {
   id: string;
@@ -47,18 +49,14 @@ export interface ApiResponse {
   data: Product[];
 }
 
-const API_URL = 'https://clothing-shop-be-production.up.railway.app/products';
-
 // Function to fetch all products
 export const fetchAllProducts = async (): Promise<Product[]> => {
   try {
-    const response = await fetch(API_URL);
+    const response = await axiosInstance.get('products');
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.status}`);
-    }
-    
-    const result: ApiResponse = await response.json();
+    // Axios doesn't have an 'ok' property - we check if the request was successful
+    // by checking if the status code is in the 2xx range
+    const result: ApiResponse = response.data;
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to fetch products');
@@ -103,15 +101,11 @@ export const formatPrice = (price: number): string => {
 
 export const fetchProductById = async (id: string): Promise<Product> => {
   try {
-    const response = await fetch(`${API_URL}/${id}`);
-
-    if (!response.ok) {
-      console.log("response not ok")
-      throw new Error(`Failed to fetch product: ${response.status}`);
-    }
+    const response = await axiosInstance.get(`products/${id}`);
     
-    const result = await response.json();
+    const result = response.data;
     console.log("result", result)
+    
     if (!result.success || !result.data || result.data.length === 0) {
       throw new Error(result.error || 'Product not found');
     }

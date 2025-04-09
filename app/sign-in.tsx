@@ -24,7 +24,7 @@ const SignInPage = () => {
     // Setup deep link handler for authentication callbacks
     const cleanup = AuthenticationService.setupDeepLinkHandler(async (authData) => {
       await login(authData)
-      router.push("/(tabs)")
+      router.push("/(authenticated)/(tabs)")
     })
     
     return cleanup
@@ -42,7 +42,7 @@ const SignInPage = () => {
 
       if (result.success && result.data) {
         await login(result.data)
-        router.push("/(tabs)")
+        router.push("/(authenticated)/(tabs)")
       } else {
         Alert.alert("Error", result.error || "Login failed")
       }
@@ -61,7 +61,7 @@ const SignInPage = () => {
 
       if (result.success && result.data) {
         await login(result.data)
-        router.push("/(tabs)")
+        router.push("/(authenticated)/(tabs)")
       } else {
         Alert.alert("Authentication Error", result.error || "Failed to sign in with Google")
       }

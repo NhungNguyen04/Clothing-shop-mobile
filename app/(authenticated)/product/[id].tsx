@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import { Star, ChevronLeft, ShoppingBag } from 'react-native-feather'; // Assuming you have this package or similar icons
-
-import { Product, fetchProductById } from '@/services/product'
+import { Star, ChevronLeft, ShoppingBag } from 'react-native-feather';
+import { useCartContext } from '@/context/CartContext';
+import { Product, fetchProductById } from '@/services/product';
 
 type ProductDetailParams = {
   ProductDetail: {
@@ -30,15 +31,18 @@ export default function ProductDetailScreen () {
   const route = useRoute<RouteProp<ProductDetailParams, 'ProductDetail'>>();
   const navigation = useNavigation();
   const { id } = route.params;
+  const { addToCart, isLoading: cartLoading, error: cartError } = useCartContext();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [quantity, setQuantity] = useState(1); // Default quantity
   
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // Load product data
   useEffect(() => {
     const loadProduct = async () => {
       try {
@@ -63,15 +67,50 @@ export default function ProductDetailScreen () {
     loadProduct();
   }, [id]);
 
-  const handleSizeSelect = (size: string) => {
+  // Show cart error if exists
+  useEffect(() => {
+    if (cartError) {
+      Alert.alert('Error', cartError);
+    }
+  }, [cartError]);
+
+  const handleSizeSelect = useCallback((size: string) => {
     setSelectedSize(size);
-  };
+  }, []);
 
-  const handleThumbnailPress = (index: number) => {
+  const handleThumbnailPress = useCallback((index: number) => {
     setSelectedImageIndex(index);
-  };
+  }, []);
 
-  const renderStars = (rating: number) => {
+  const handleAddToCart = useCallback(async () => {
+    if (!selectedSize) {
+      Alert.alert('Size Required', 'Please select a size before adding to cart');
+      return;
+    }
+
+    try {
+      await addToCart(id, selectedSize, quantity);
+      Alert.alert(
+        'Success',
+        'Item added to your cart',
+        [
+          { 
+            text: 'Continue Shopping', 
+            style: 'cancel' 
+          },
+          { 
+            text: 'View Cart', 
+            onPress: () => navigation.navigate('cart' as never) 
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add item to cart. Please try again.');
+      console.error('Add to cart error:', error);
+    }
+  }, [id, selectedSize, quantity, addToCart, navigation]);
+
+  const renderStars = useCallback((rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating - fullStars >= 0.5;
@@ -93,9 +132,9 @@ export default function ProductDetailScreen () {
     }
     
     return stars;
-  };
+  }, []);
 
-  const renderThumbnail = ({ item, index }: { item: string; index: number }) => (
+  const renderThumbnail = useCallback(({ item, index }: { item: string; index: number }) => (
     <TouchableOpacity 
       style={[
         { borderWidth: 1, borderColor: selectedImageIndex === index ? '#ec4899' : '#d1d5db', borderRadius: 4, overflow: 'hidden' }
@@ -108,7 +147,7 @@ export default function ProductDetailScreen () {
         resizeMode="cover"
       />
     </TouchableOpacity>
-  );
+  ), [selectedImageIndex, handleThumbnailPress]);
 
   if (loading) {
     return (
@@ -137,7 +176,7 @@ export default function ProductDetailScreen () {
       <StatusBar barStyle="dark-content" />
       
       {/* Header */}
-      <View className="flex-row items-center p-4 border-b border-gray-200">
+      <View className="flex-row items-center border-b border-gray-200">
         <TouchableOpacity 
           className="p-1"
           onPress={() => navigation.goBack()}
@@ -233,8 +272,16 @@ export default function ProductDetailScreen () {
               <Text className=" text-sm font-outfit-medium text-gray-800">TRY ON WITH AI</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity className="flex-1 h-12 justify-center items-center bg-black">
-              <Text className=" text-sm font-outfit-medium text-white">ADD TO CART</Text>
+            <TouchableOpacity 
+              className={`flex-1 h-12 justify-center items-center ${cartLoading ? 'bg-gray-400' : 'bg-black'}`}
+              onPress={handleAddToCart}
+              disabled={cartLoading || !selectedSize}
+            >
+              {cartLoading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text className="text-sm font-outfit-medium text-white">ADD TO CART</Text>
+              )}
             </TouchableOpacity>
           </View>
           

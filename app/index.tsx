@@ -13,7 +13,7 @@ export default function HomePage() {
   // Redirect authenticated users to the main app
   useEffect(() => {
     if (user && !isLoading) {
-      router.replace('/(tabs)');
+      router.replace('/(authenticated)/(tabs)');
     }
   }, [user, isLoading, router]);
 

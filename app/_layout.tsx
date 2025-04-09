@@ -35,10 +35,9 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <Stack screenOptions={{headerShown: false}}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(authenticated)" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{headerShown: false}} />
           <Stack.Screen name="register" options={{headerShown: false}} />
-          <Stack.Screen name='product/[id]' options={{headerShown: false}} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </AuthProvider>

@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-
+import axiosInstance from './axiosInstance';
 
 export interface User {
   id: string;
@@ -24,21 +24,23 @@ export class AuthenticationService {
    * Register a new user
    */
   static readonly API_URL = process.env.API_ENDPOINT || "https://clothing-shop-be-production.up.railway.app";
+  
   static async register(name: string, email: string, password: string): Promise<AuthResult> {
     try {
-      const response = await fetch(`${this.API_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        })
+      // Change the baseURL temporarily for this request
+      const originalBaseUrl = axiosInstance.defaults.baseURL;
+      axiosInstance.defaults.baseURL = this.API_URL;
+      
+      const response = await axiosInstance.post('/users', {
+        name,
+        email,
+        password,
       });
       
-      const data = await response.json();
+      // Restore original baseURL
+      axiosInstance.defaults.baseURL = originalBaseUrl;
+      
+      const data = response.data;
       
       if (!data.success) {
         return {
@@ -51,11 +53,11 @@ export class AuthenticationService {
         success: true,
         data: undefined
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       return {
         success: false,
-        error: 'An error occurred during registration'
+        error: error.response?.data?.message || 'An error occurred during registration'
       };
     }
   }
@@ -65,20 +67,21 @@ export class AuthenticationService {
    */
   static async login(email: string, password: string): Promise<AuthResult> {
     try {
-      const response = await fetch(`${this.API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        })
+      // Change the baseURL temporarily for this request
+      const originalBaseUrl = axiosInstance.defaults.baseURL;
+      axiosInstance.defaults.baseURL = this.API_URL;
+      
+      const response = await axiosInstance.post('/auth/login', {
+        email,
+        password,
       });
+      
+      // Restore original baseURL
+      axiosInstance.defaults.baseURL = originalBaseUrl;
 
       console.log("Log in response", response);
       
-      const data = await response.json();
+      const data = response.data;
       
       if (!data.access_token) {
         return {
@@ -91,11 +94,11 @@ export class AuthenticationService {
         success: true,
         data
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       return {
         success: false,
-        error: 'An error occurred during sign in'
+        error: error.response?.data?.message || 'An error occurred during sign in'
       };
     }
   }

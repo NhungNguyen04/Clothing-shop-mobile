@@ -50,7 +50,7 @@ const RegisterPage = () => {
       
       if (result.success && result.data) {
         // Handle successful OAuth login
-        router.push('/(tabs)')
+        router.push('/(authenticated)/(tabs)')
       } else {
         Alert.alert('Error', result.error || 'Google sign in failed')
       }
