@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import ProductGrid from '@/components/ProductGrid';
 import FashionHero from '@/components/Hero';
-import { Product, fetchAllProducts, fetchRecentProducts } from '@/services/product';
+import { Product, fetchAllProducts } from '@/services/product';
+import { useProductStore } from '@/store/ProductStore';
 
 // Define interfaces for our filter options
 interface CategoryOption {
@@ -48,12 +49,9 @@ const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.7;
 
 const ProductListingScreen: React.FC = () => {
-  // Product state from your existing code
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const { products, isLoading, setIsLoading } = useProductStore();
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSort, setSelectedSort] = useState<string>(SORT_OPTIONS[0]);
@@ -70,17 +68,15 @@ const ProductListingScreen: React.FC = () => {
   const loadProducts = async (isRefreshing = false) => {
     try {
       if (!isRefreshing) {
-        setLoading(true);
+        setIsLoading(true);
       }
-      const fetchedProducts = await fetchAllProducts(); // Fetch more products for the listing
-      setProducts(fetchedProducts);
-      setFilteredProducts(fetchedProducts); // Initialize filtered products with all products
+      setFilteredProducts(products || []); // Initialize filtered products with all products
       setError(null);
     } catch (err) {
       setError('Failed to load products');
       console.error(err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
       setRefreshing(false);
     }
   };
@@ -97,7 +93,7 @@ const ProductListingScreen: React.FC = () => {
 
   const applyFiltersAndSearch = () => {
     console.log('categories', categories);
-    let result = [...products];
+    let result = [...(products || [])];
     
     // Apply search filter
     if (searchQuery) {
@@ -273,7 +269,7 @@ const ProductListingScreen: React.FC = () => {
         
         <ProductGrid
           products={filteredProducts}
-          loading={loading}
+          loading={isLoading}
           error={error}
           onProductPress={handleProductPress}
         />

@@ -1,79 +1,115 @@
-import type React from "react"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface QuantityControlProps {
-  quantity: number
-  onIncrease: () => void
-  onDecrease: () => void
-  maxQuantity?: number
+  quantity: number;
+  onIncrease: () => void;
+  onDecrease: () => void;
+  maxQuantity: number;
+  disabled?: boolean;
 }
 
 const QuantityControl: React.FC<QuantityControlProps> = ({
   quantity,
   onIncrease,
   onDecrease,
-  maxQuantity = Number.POSITIVE_INFINITY,
+  maxQuantity,
+  disabled = false
 }) => {
-  const isDecrementDisabled = quantity <= 1
-  const isIncrementDisabled = maxQuantity !== undefined && quantity >= maxQuantity
+  const isMaxReached = quantity >= maxQuantity;
+  const isMinReached = quantity <= 1;
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.button, isDecrementDisabled && styles.disabledButton]}
+        style={[
+          styles.button,
+          styles.leftButton,
+          (isMinReached || disabled) && styles.disabledButton
+        ]}
         onPress={onDecrease}
-        disabled={isDecrementDisabled}
-        activeOpacity={0.7}
+        disabled={isMinReached || disabled}
       >
-        <Text style={[styles.buttonText, isDecrementDisabled && styles.disabledText]}>-</Text>
+        <Text style={[styles.buttonText, (isMinReached || disabled) && styles.disabledText]}>-</Text>
       </TouchableOpacity>
-
-      <Text style={styles.quantity}className="font-outfit">{quantity}</Text>
-
+      
+      <View style={styles.quantityContainer}>
+        <Text style={styles.quantityText}>{quantity}</Text>
+      </View>
+      
       <TouchableOpacity
-        style={[styles.button, isIncrementDisabled && styles.disabledButton]}
+        style={[
+          styles.button,
+          styles.rightButton,
+          (isMaxReached || disabled) && styles.disabledButton
+        ]}
         onPress={onIncrease}
-        disabled={isIncrementDisabled}
-        activeOpacity={0.7}
+        disabled={isMaxReached || disabled}
       >
-        <Text style={[styles.buttonText, isIncrementDisabled && styles.disabledText]}>+</Text>
+        <Text style={[styles.buttonText, (isMaxReached || disabled) && styles.disabledText]}>+</Text>
       </TouchableOpacity>
+      
+      {isMaxReached && (
+        <Text style={styles.maxReachedText}>Max</Text>
+      )}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e1e4e8",
-    borderRadius: 4,
-    overflow: "hidden",
-    width: 96,
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
   },
   button: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
   },
-  disabledButton: {
-    opacity: 0.5,
+  leftButton: {
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
+  },
+  rightButton: {
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4b5563',
+  },
+  quantityContainer: {
+    width: 40,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  quantityText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  disabledButton: {
+    backgroundColor: '#e5e7eb',
   },
   disabledText: {
-    color: "#a0a0a0",
+    color: '#9ca3af',
   },
-  quantity: {
-    width: 32,
-    textAlign: "center",
-    fontSize: 14,
-  },
-})
+  maxReachedText: {
+    position: 'absolute',
+    top: -15,
+    right: 0,
+    fontSize: 10,
+    color: '#ef4444',
+    fontWeight: '500',
+  }
+});
 
-export default QuantityControl
+export default QuantityControl;

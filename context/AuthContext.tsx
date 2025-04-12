@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { useAuthStore } from '@/store/AuthStore';
 
 type User = {
   id: string;
@@ -21,6 +22,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const setAuth = useAuthStore(state => state.setAuth);
+  const clearAuth = useAuthStore(state => state.clearAuth);
 
   useEffect(() => {
     // Load stored values
@@ -43,6 +46,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadStoredAuth();
   }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+      if (user && token) {
+        setAuth(user, token);
+      } else {
+        clearAuth();
+      }
+    }
+  }, [user, token, isLoading, setAuth, clearAuth]);
+
   const login = async (data: { user: User, access_token: string }) => {
     try {
       await SecureStore.setItemAsync('userToken', data.access_token);
@@ -50,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setToken(data.access_token);
       setUser(data.user);
+      setAuth(data.user, data.access_token);
     } catch (error) {
       console.log('Failed to store auth data', error);
     }
@@ -62,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setToken(null);
       setUser(null);
+      clearAuth();
     } catch (error) {
       console.log('Failed to remove auth data', error);
     }

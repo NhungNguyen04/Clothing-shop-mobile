@@ -11,40 +11,29 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import FashionHero from '@/components/Hero';
 import ProductGrid from '@/components/ProductGrid';
-import { Product, fetchRecentProducts } from '@/services/product';
 import { router } from 'expo-router';
+import { useProductStore } from '@/store/ProductStore';
+import { Product } from '@/services/product';
 
 const HomeScreen = () => {
-  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation();
-
-  const loadProducts = async (isRefreshing = false) => {
-    try {
-      if (!isRefreshing) {
-        setLoading(true);
-      }
-      const products = await fetchRecentProducts(10);
-      setRecentProducts(products);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load products');
-      console.error(err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const { recentProducts, fetchProducts, isLoading, setIsLoading } = useProductStore();
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadProducts(true);
+    setIsLoading(true);
+    fetchProducts()
+      .then(() => {
+        setRefreshing(false);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setRefreshing(false);
+        setLoading(false);
+      });
   };
 
   const handleProductPress = (product: Product) => {
@@ -69,7 +58,7 @@ const HomeScreen = () => {
           <View style={styles.line} />
         </View>
         <ProductGrid
-          products={recentProducts}
+          products={recentProducts || []}
           loading={loading}
           error={error}
           onProductPress={handleProductPress}

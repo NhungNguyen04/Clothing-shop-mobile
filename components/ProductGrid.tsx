@@ -8,8 +8,9 @@ import {
   Dimensions,
   TouchableOpacity
 } from 'react-native';
-import { Product, getProductMainImage } from '@/services/product';
+import { Product } from '@/services/product';
 import ProductItem from './ProductItem';
+import { useProductStore } from '@/store/ProductStore';
 
 interface ProductGridProps {
   title?: string;
@@ -23,13 +24,13 @@ const { width } = Dimensions.get('window');
 const ITEM_SPACING = 16;
 const ITEM_WIDTH = (width - ITEM_SPACING * 3) / 2;
 
-
 const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   loading = false,
   error = null,
   onProductPress
 }) => {
+  const { getProductMainImage } = useProductStore();
   const renderItem = ({ item }: { item: Product }) => (
     <View style={styles.itemContainer}>
       <ProductItem

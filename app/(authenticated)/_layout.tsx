@@ -1,24 +1,33 @@
 import { Stack } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform, View, StyleSheet, Image, Dimensions, TouchableOpacity, Text } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
-import { CartProvider } from '@/context/CartContext';
-import { useCartContext } from '@/context/CartContext';
+import { useProductStore } from '@/store/ProductStore';
+import { useCartStore } from '@/store/CartStore';
 
 // Separate TopNavigation component
 function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
-  const { cart, refreshCart } = useCartContext();
+  const { cart, refreshCart, error } = useCartStore();
+  const { fetchProducts, fetchRecentProducts } = useProductStore();
   
   // Calculate total items in cart
   const totalItems = cart?.cartItems?.reduce((total, item) => total + item.quantity, 0) || 0;
   
   // Refresh cart when component mounts
-  React.useEffect(() => {
-    refreshCart();
-  }, [refreshCart]);
+  useEffect(() => {
+    const fetchData = async () => {
+      await refreshCart(); // Refresh cart data
+      await fetchProducts(); // Fetch all products
+      await fetchRecentProducts(); // Fetch recent products
+    };
+    fetchData();
+  }, [refreshCart, fetchProducts, fetchRecentProducts]);
+
+  // If there's an error with the cart, we can still render the navigation
+  // The error will be handled in the specific screens
 
   return (
     <View style={[
@@ -33,7 +42,10 @@ function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
         />
       </View>
       <View style={styles.actionsContainer}>
-        <TouchableOpacity onPress={() => {router.navigate("/cart")}} style={styles.iconButton}>
+        <TouchableOpacity 
+          onPress={() => {router.navigate("/cart")}} 
+          style={styles.iconButton}
+        >
           <IconSymbol size={24} name="cart" color={Colors[colorScheme].tabIconSelected} />
           {totalItems > 0 && (
             <View style={styles.badge}>
@@ -51,27 +63,26 @@ export default function AuthenticatedLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   
   return (
-    <CartProvider>
-      <View style={{ flex: 1 }}>
-        <TopNavigation colorScheme={colorScheme} />
-        <Stack
-          screenOptions={{
-            headerShown: false, // Hide the default header
-            contentStyle: { backgroundColor: Colors[colorScheme].background }
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="cart" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
-        </Stack>
-      </View>
-    </CartProvider>
+    <View style={{ flex: 1 }}>
+      <TopNavigation colorScheme={colorScheme} />
+      <Stack
+        screenOptions={{
+          headerShown: false, // Hide the default header
+          contentStyle: { backgroundColor: Colors[colorScheme].background }
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="cart" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="checkout" options={{ presentation: 'modal' }} />
+      </Stack>
+    </View>
   );
 }
 
 const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
-  // Your existing styles
+  // Your existing styles...
   topNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

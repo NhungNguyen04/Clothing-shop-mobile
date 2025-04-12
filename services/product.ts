@@ -3,15 +3,16 @@
 import axiosInstance from "./axiosInstance";
 
 // Define the types based on the API response
+
 export interface SizeStock {
   id: string;
+  productId: string;
   size: string;
   quantity: number;
-  productId: string;
   createdAt: string;
   updatedAt: string;
+  product: Product;
 }
-
 export interface Seller {
   id: string;
   userId: string;
@@ -69,50 +70,3 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
   }
 };
 
-// Function to fetch the 10 most recent products
-export const fetchRecentProducts = async (limit: number = 10): Promise<Product[]> => {
-  try {
-    const allProducts = await fetchAllProducts();
-    
-    // Sort products by createdAt date (newest first)
-    const sortedProducts = [...allProducts].sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-    
-    // Return only the specified number of products
-    return sortedProducts.slice(0, limit);
-  } catch (error) {
-    console.error('Error fetching recent products:', error);
-    throw error;
-  }
-};
-
-// Helper function to get the first image from a product
-export const getProductMainImage = (product: Product): string => {
-  return product.image && product.image.length > 0 
-    ? product.image[0] 
-    : 'https://via.placeholder.com/300x400';
-};
-
-// Format price with currency symbol
-export const formatPrice = (price: number): string => {
-  return `$${price.toFixed(2)}`;
-};
-
-export const fetchProductById = async (id: string): Promise<Product> => {
-  try {
-    const response = await axiosInstance.get(`products/${id}`);
-    
-    const result = response.data;
-    console.log("result", result)
-    
-    if (!result.success || !result.data || result.data.length === 0) {
-      throw new Error(result.error || 'Product not found');
-    }
-    
-    return result.data;
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    throw error;
-  }
-}
