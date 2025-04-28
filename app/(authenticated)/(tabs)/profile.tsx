@@ -52,7 +52,8 @@ export default function ProfileScreen() {
         <View className="bg-white p-6 mb-4">
           <Text className="text-lg font-bold text-gray-800 mb-4">Account</Text>
           
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
+          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100"
+            onPress={() => router.navigate('/(authenticated)/orders/page')}>
             <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
               <Text className="text-blue-500 font-bold">🛒</Text>
             </View>

@@ -1,8 +1,22 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from 'react-native';
 
 const getBaseUrl = () => {
-  return 'https://clothing-shop-be-production.up.railway.app';
+  // For Android emulators, localhost points to the emulator's own loopback interface
+  // 10.0.2.2 is the special IP that allows Android emulator to access the host machine
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3300';
+  }
+  // For iOS simulator, localhost works as expected
+  else if (Platform.OS === 'ios') {
+    return 'http://localhost:3300';
+  }
+  // For actual physical devices, you would need to use your computer's local IP address
+  // For example: return 'http://192.168.1.100:3300';
+  
+  // Default fallback
+  return 'http://localhost:3300';
 };
 
 const axiosInstance = axios.create({
@@ -47,10 +61,11 @@ axiosInstance.interceptors.response.use(
       const statusText = response.status
         ? `${response.status}`
         : "unknown status";
-      const safeData = response.data
-        ? JSON.stringify(response.data)
-        : "no data";
-      console.log("Response:", statusText, safeData);
+      console.log(
+        `Response from ${response.config.url || "unknown endpoint"}`,
+        statusText,
+        response.data ? JSON.stringify(response.data) : "no data"
+      );
     } catch (error) {
       console.error("Error logging response:", error);
     }

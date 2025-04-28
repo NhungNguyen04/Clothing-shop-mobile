@@ -6,7 +6,7 @@ import CheckBox from "@/components/CheckBox"
 import QuantityControl from "@/components/QuantityControl"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { useNavigation } from "expo-router"
+import { router, useNavigation } from "expo-router"
 import { ChevronLeft } from "react-native-feather"
 import { useCartStore } from "@/store/CartStore"
 
@@ -328,14 +328,14 @@ export default function CartScreen() {
 
         <TouchableOpacity
           className={`${
-            countSelectedItems() === 0 ? 'bg-gray-400' : 'bg-pink-500'
-          } px-6 py-4 rounded-lg items-center w-4/5 mx-auto`}
+            countSelectedItems() === 0 ? 'bg-gray-400' : 'bg-black'
+          } px-6 py-4 items-center w-4/5 mx-auto`}
           disabled={countSelectedItems() === 0}
           onPress={() => {
-            navigation.navigate('checkout' as never);
+            router.push('/(authenticated)/checkout/page')
           }}
         >
-          <Text className="text-white font-outfit-bold text-lg">
+          <Text className="text-white font-outfit-medium">
             Proceed to Checkout ({countSelectedItems()})
           </Text>
         </TouchableOpacity>

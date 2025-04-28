@@ -368,7 +368,7 @@ export default function ProductDetailScreen() {
               onPress={handleAddToCart}
               disabled={isAddingToCart || cartIsLoading || !selectedSize || !isInStock(selectedSize || '')}
             >
-              {isAddingToCart || cartIsLoading ? (
+              {cartIsLoading ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
                 <Text className="text-sm font-outfit-medium text-white">ADD TO CART</Text>

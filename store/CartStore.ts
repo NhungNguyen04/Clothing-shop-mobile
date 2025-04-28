@@ -206,10 +206,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         isLoading: true
       });
       
-      await addToCart(productId, size, quantity);
-      
-      await get().refreshCart();
-      
     } catch (error) {
       set({ 
         cart: originalCart,
@@ -219,6 +215,17 @@ export const useCartStore = create<CartState>((set, get) => ({
       });
     } finally {
       set({ isLoading: false });
+      try {
+        await addToCart(productId, size, quantity);
+      } catch (error) {
+        set({ 
+          cart: originalCart,
+          itemsBySeller: originalItemsBySeller,
+          error: error instanceof Error ? error.message : 'Failed to add item to cart',
+          isLoading: false
+        });
+        await get().refreshCart();
+      }
     }
   },
   
@@ -279,11 +286,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         itemsBySeller: updatedItemsBySeller,
         isLoading: true
       });
-      
-      await updateCartItemQuantity(cartItemId, quantity);
-      
-      await get().refreshCart();
-      
     } catch (error) {
       set({ 
         cart: originalCart,
@@ -293,6 +295,15 @@ export const useCartStore = create<CartState>((set, get) => ({
       });
     } finally {
       set({ isLoading: false });
+      try {
+        await updateCartItemQuantity(cartItemId, quantity);
+      } catch (error) {
+        set({ 
+          error: error instanceof Error ? error.message : 'Failed to update quantity',
+          isLoading: false 
+        });
+        get().refreshCart();
+      }
     }
   },
   
@@ -331,10 +342,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         isLoading: true
       });
       
-      await removeCartItem(cartItemId);
-      
-      await get().refreshCart();
-      
     } catch (error) {
       set({ 
         cart: originalCart,
@@ -344,6 +351,15 @@ export const useCartStore = create<CartState>((set, get) => ({
       });
     } finally {
       set({ isLoading: false });
+      try {
+        await removeCartItem(cartItemId);
+      } catch (error) {
+        set({ 
+          error: error instanceof Error ? error.message : 'Failed to remove item',
+          isLoading: false 
+        });
+        await get().refreshCart();
+      }
     }
   },
   
@@ -386,10 +402,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         isLoading: true
       });
       
-      await removeItemsBySeller(sellerId);
-      
-      await get().refreshCart();
-      
     } catch (error) {
       set({ 
         cart: originalCart,
@@ -399,6 +411,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       });
     } finally {
       set({ isLoading: false });
+      try {
+        await removeItemsBySeller(sellerId);
+      } catch (error) {
+        await get().refreshCart();
+      }
     }
   },
 }));
