@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { OrderService, CreateOrderInput, Order, ApiResponse, OrderStatus } from '../services/order';
+import { 
+  OrderService, Order, ApiResponse, OrderStatus, 
+  CartToOrderInput, UpdateOrderInput
+} from '../services/order';
 import { useCartStore } from './CartStore';
 import { useAuthStore } from './AuthStore';
 
@@ -16,13 +19,18 @@ interface OrderState {
   getOrderById: (orderId: string) => Promise<Order | null>;
   
   // Create orders from cart items (checkout)
-  checkoutCart: (shippingAddress: string, phoneNumber: string) => Promise<boolean>;
+  checkoutCart: (
+    address: string,
+    phoneNumber: string,
+    postalCode?: string,
+    paymentMethod?: 'COD' | 'VIETQR'
+  ) => Promise<boolean>;
   
   // Update order status
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
   
   // Cancel an order
-  cancelOrder: (orderId: string) => Promise<boolean>;
+  cancelOrder: (orderId: string, reason?: string) => Promise<boolean>;
   
   clearOrderError: () => void;
 }
@@ -90,7 +98,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
-  checkoutCart: async (shippingAddress: string, phoneNumber: string): Promise<boolean> => {
+  checkoutCart: async (
+    address: string,
+    phoneNumber: string,
+    postalCode?: string,
+    paymentMethod: 'COD' | 'VIETQR' = 'COD'
+  ): Promise<boolean> => {
     set({ isLoading: true, error: null });
     
     try {
@@ -102,49 +115,44 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         return false;
       }
       
-      if (!cartStore.cart || !cartStore.itemsBySeller || cartStore.itemsBySeller.length === 0) {
+      if (!cartStore.cart) {
         set({ error: 'Cart is empty', isLoading: false });
         return false;
       }
       
-      // We need to create separate orders for each seller
-      const orderPromises = cartStore.itemsBySeller.map(async (sellerItems) => {
-        // Create an order for each seller's items
-        for (const item of sellerItems.items) {
-          const product = item.sizeStock.product;
-          const orderData: CreateOrderInput = {
-            totalPrice: item.totalPrice,
-            status: 'PENDING',
-            customerName: authStore.user!.name || 'Unknown Customer',
-            phoneNumber: phoneNumber,
-            userId: authStore.user!.id,
-            address: shippingAddress,
-            productId: product.id,
-            quantity: item.quantity,
-            price: product.price,
-            sellerId: product.sellerId,
-            size: item.sizeStock.size
-          };
-          
-          await OrderService.createOrder(orderData);
-        }
-      });
+      // Get selected item IDs
+      const selectedItemIds = cartStore.cart.cartItems.map(item => item.id);
       
-      // Wait for all orders to be created
-      await Promise.all(orderPromises);
-      
-      // Clear the cart after successful checkout
-      // We need to remove all items from the cart for each seller
-      for (const sellerItems of cartStore.itemsBySeller) {
-        await cartStore.removeSellerItems(sellerItems.sellerId);
+      if (selectedItemIds.length === 0) {
+        set({ error: 'No items selected for checkout', isLoading: false });
+        return false;
       }
+
+      // Create checkout data using CartToOrderInput format
+      const checkoutData: CartToOrderInput = {
+        cartId: cartStore.cart.id,
+        userId: authStore.user.id,
+        phoneNumber,
+        address,
+        postalCode,
+        paymentMethod,
+        selectedCartItemIds: selectedItemIds
+      };
       
-      // Refresh the orders list
-      await get().fetchUserOrders();
+      const response = await OrderService.createFromCart(checkoutData);
       
-      set({ isLoading: false });
-      return true;
-      
+      if (response.success && response.data) {
+        // Refresh orders
+        await get().fetchUserOrders();
+        set({ isLoading: false });
+        return true;
+      } else {
+        set({ 
+          error: response.message || 'Checkout failed', 
+          isLoading: false
+        });
+        return false;
+      }
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Checkout failed',
@@ -158,7 +166,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const response = await OrderService.updateOrderStatus(orderId, status);
+      // Create update data
+      const updateData: UpdateOrderInput = { status };
+      
+      const response = await OrderService.updateOrder(orderId, updateData);
+      
       if (response.success && response.data) {
         // Update the order in the local state
         const updatedOrders = get().orders.map(order => 
@@ -188,7 +200,44 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
-  cancelOrder: async (orderId: string): Promise<boolean> => {
-    return get().updateOrderStatus(orderId, 'CANCELLED');
+  cancelOrder: async (orderId: string, reason?: string): Promise<boolean> => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Create update data with status and optional cancel reason
+      const updateData: UpdateOrderInput = { 
+        status: 'CANCELLED',
+        cancelReason: reason
+      };
+      
+      const response = await OrderService.updateOrder(orderId, updateData);
+      
+      if (response.success && response.data) {
+        // Update the order in the local state
+        const updatedOrders = get().orders.map(order => 
+          order.id === orderId ? response.data! : order
+        );
+        
+        set({ 
+          orders: updatedOrders,
+          currentOrder: get().currentOrder?.id === orderId ? response.data : get().currentOrder,
+          isLoading: false 
+        });
+        
+        return true;
+      } else {
+        set({ 
+          error: response.message || `Failed to cancel order ${orderId}`, 
+          isLoading: false
+        });
+        return false;
+      }
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : `Failed to cancel order ${orderId}`,
+        isLoading: false
+      });
+      return false;
+    }
   }
 }));

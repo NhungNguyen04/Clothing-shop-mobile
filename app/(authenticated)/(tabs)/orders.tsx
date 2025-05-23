@@ -9,7 +9,7 @@ import { ChevronLeft } from 'react-native-feather';
 const STATUS_TABS: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 
-const OrdersScreen = () => {
+const OrdersScreen:React.FC = () => {
   const { orders, fetchUserOrders, isLoading, error, cancelOrder } = useOrderStore();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'ALL'>('ALL');
   

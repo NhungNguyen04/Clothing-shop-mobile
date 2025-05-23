@@ -23,13 +23,12 @@ export class AuthenticationService {
   /**
    * Register a new user
    */
-  static readonly API_URL = process.env.API_ENDPOINT || "https://clothing-shop-be-production.up.railway.app";
   
   static async register(name: string, email: string, password: string): Promise<AuthResult> {
     try {
-      // Change the baseURL temporarily for this request
-      const originalBaseUrl = axiosInstance.defaults.baseURL;
-      axiosInstance.defaults.baseURL = this.API_URL;
+      // // Change the baseURL temporarily for this request
+      // const originalBaseUrl = axiosInstance.defaults.baseURL;
+      // axiosInstance.defaults.baseURL = this.API_URL;
       
       const response = await axiosInstance.post('/users', {
         name,
@@ -37,8 +36,8 @@ export class AuthenticationService {
         password,
       });
       
-      // Restore original baseURL
-      axiosInstance.defaults.baseURL = originalBaseUrl;
+      // // Restore original baseURL
+      // axiosInstance.defaults.baseURL = originalBaseUrl;
       
       const data = response.data;
       
@@ -67,17 +66,17 @@ export class AuthenticationService {
    */
   static async login(email: string, password: string): Promise<AuthResult> {
     try {
-      // Change the baseURL temporarily for this request
-      const originalBaseUrl = axiosInstance.defaults.baseURL;
-      axiosInstance.defaults.baseURL = this.API_URL;
+      // // Change the baseURL temporarily for this request
+      // const originalBaseUrl = axiosInstance.defaults.baseURL;
+      // axiosInstance.defaults.baseURL = this.API_URL;
       
       const response = await axiosInstance.post('/auth/login', {
         email,
         password,
       });
       
-      // Restore original baseURL
-      axiosInstance.defaults.baseURL = originalBaseUrl;
+      // // Restore original baseURL
+      // axiosInstance.defaults.baseURL = originalBaseUrl;
 
       console.log("Log in response", response);
       
@@ -109,7 +108,7 @@ export class AuthenticationService {
   static async loginWithGoogle(): Promise<AuthResult> {
     try {
       const redirectUri = Linking.createURL('auth/callback');
-      const authUrl = `${this.API_URL}/auth/google?platform=mobile&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      const authUrl = `${axiosInstance.defaults.baseURL}/auth/google?platform=mobile&redirect_uri=${encodeURIComponent(redirectUri)}`;
       console.log("Auth URL", authUrl);
       
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);

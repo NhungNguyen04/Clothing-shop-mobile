@@ -21,6 +21,9 @@ const MAPPING = {
   'star.fill': 'star',
   'magnifyingglass': 'search',
   'person': 'person',
+  'clock': 'access-time',
+  'bell': 'notifications',
+  'message': 'message',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

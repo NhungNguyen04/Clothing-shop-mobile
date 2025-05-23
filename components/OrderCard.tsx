@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Order, OrderStatus } from '@/services/order';
 
 const getStatusColor = (status: OrderStatus) => {
@@ -30,6 +30,11 @@ export default function OrderCard({
 }) {
   const date = new Date(order.createdAt).toLocaleDateString();
   
+  // Get the first item safely, or provide a fallback for display
+  const firstItem = order.orderItems && order.orderItems.length > 0 
+    ? order.orderItems[0] 
+    : null;
+  
   return (
     <TouchableOpacity 
       className="bg-white rounded-lg p-4 mb-3 shadow-sm" 
@@ -40,11 +45,35 @@ export default function OrderCard({
         <Text className="text-gray-500 font-outfit">{date}</Text>
       </View>
       
-      <View className="mb-3">
-        <Text className="text-base mb-1 truncate font-outfit">
-          {order.productId} - Size {order.size}
-        </Text>
-        <Text className="text-gray-500 font-outfit">Quantity: {order.quantity}</Text>
+      <View className="mb-3 flex-row items-center">
+        {firstItem?.sizeStock?.product?.image && firstItem.sizeStock.product.image.length > 0 ? (
+          <View className="mr-3">
+            <Image
+              source={{ uri: firstItem.sizeStock.product.image[0] }}
+              className="w-14 h-14 rounded-md"
+              style={{ width: 56, height: 56 }}
+            />
+          </View>
+        ) : (
+          <View className="mr-3 w-14 h-14 rounded-md bg-gray-200 items-center justify-center">
+            <Text className="text-gray-400 text-xs">No Image</Text>
+          </View>
+        )}
+        <View className="flex-1">
+          <Text className="text-base mb-1 truncate font-outfit">
+            {order.seller?.managerName || 'Seller Name Unavailable'}
+          </Text>
+          {firstItem?.sizeStock?.product ? (
+            <Text className="text-gray-500 font-outfit">{firstItem.sizeStock.product.name}</Text>
+          ) : (
+            <Text className="text-gray-500 font-outfit italic">Order details unavailable</Text>
+          )}
+          {order.orderItems && order.orderItems.length > 1 && (
+            <Text className="text-gray-500 font-outfit mt-1">
+              +{order.orderItems.length - 1} more {order.orderItems.length - 1 === 1 ? 'item' : 'items'}
+            </Text>
+          )}
+        </View>
       </View>
       
       <View className="flex-row justify-between items-center mb-3">

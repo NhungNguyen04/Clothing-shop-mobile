@@ -69,7 +69,9 @@ export default function ProfileScreen() {
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity className="flex-row items-center py-4">
+          <TouchableOpacity className="flex-row items-center py-4"
+            onPress={() => router.navigate('/(authenticated)/address/page')}
+          >
             <View className="w-8 h-8 rounded-full bg-purple-100 items-center justify-center mr-3">
               <Text className="text-purple-500 font-bold">🏠</Text>
             </View>

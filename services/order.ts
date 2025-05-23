@@ -1,60 +1,114 @@
+import { User } from './authentication';
 import axiosInstance from './axiosInstance';
+import { Seller, SizeStock } from './product';
+
 /**
  * Order status options
  */
 export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+/**
+ * Shipment status options
+ */
+export type ShipmentStatus = 'PENDING' | 'SHIPPED' | 'DELIVERED';
+
+/**
+ * Payment status options
+ */
+export type PaymentStatus = 'PENDING' | 'SUCCESS';
+
+/**
+ * Order item structure
+ */
+export interface OrderItem {
+  sizeStockId: string;
+  quantity: number;
+  price: number;
+}
+
 /**
  * Order creation input type
  */
 export interface CreateOrderInput {
-  totalPrice: number;
-  status: string;
-  customerName: string;
-  phoneNumber: string;
   userId: string;
-  address: string;
-  productId: string;
-  quantity: number;
-  price: number;
   sellerId: string;
-  size: string;
+  phoneNumber: string;
+  address: string;
+  postalCode?: string;
+  paymentMethod: 'COD' | 'VIETQR';
+  orderItems: OrderItem[];
+}
+
+/**
+ * Cart to order input type
+ */
+export interface CartToOrderInput {
+  cartId: string;
+  userId: string;
+  phoneNumber: string;
+  address: string;
+  postalCode?: string;
+  paymentMethod: 'COD' | 'VIETQR';
+  selectedCartItemIds: string[];
 }
 
 /**
  * Order update input type - all fields are optional
  */
 export interface UpdateOrderInput {
-  totalPrice?: number;
-  status?: string;
-  customerName?: string;
-  phoneNumber?: string;
-  userId?: string;
-  address?: string;
-  productId?: string;
-  quantity?: number;
-  price?: number;
-  sellerId?: string;
-  size?: string;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  shipmentStatus?: ShipmentStatus;
+  deliveryDate?: string;
+  cancelReason?: string;
 }
 
 /**
- * Order response data structure
+ * OrderItem response structure
+ */
+export interface OrderItemResponse {
+  id: string;
+  orderId: string;
+  sizeStockId: string;
+  quantity: number;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  sizeStock: SizeStock;
+}
+
+/**
+ * Shipment structure
+ */
+export interface Shipment {
+  id: string;
+  status: ShipmentStatus;
+  orderId: string;
+  deliveryDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Order response structure
  */
 export interface Order {
   id: string;
+  userId: string;
+  sellerId: string;
+  phoneNumber: string;
+  address: string;
+  postalCode?: string;
+  paymentMethod: 'COD' | 'VIETQR';
   totalPrice: number;
   status: OrderStatus;
-  customerName: string;
-  phoneNumber: string;
-  userId: string;
-  address: string;
-  productId: string;
-  quantity: number;
-  price: number;
-  sellerId: string;
-  size: string;
+  paymentStatus: PaymentStatus;
   createdAt: string;
   updatedAt: string;
+  orderItems: OrderItemResponse[];
+  shipment: Shipment;
+  user?: User;
+  seller?: Seller;
 }
 
 /**
@@ -82,6 +136,30 @@ export const OrderService = {
       return response.data;
     } catch (error) {
       console.error('Error creating order:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create order from cart items
+   * @param orderData Cart and order details
+   * @returns API response with created orders data
+   */
+  createFromCart: async (orderData: CartToOrderInput): Promise<ApiResponse<Order[]>> => {
+    try {
+      console.log(`POST /orders/from-cart ${JSON.stringify(orderData)}`);
+      const response = await axiosInstance.post('/orders/from-cart', orderData);
+      console.log(`Response from /orders/from-cart ${response.status}`, response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating order from cart:', error);
+      
+      // Check if the response contains data with an error message
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      // If no structured response available, create a standard error response
       throw error;
     }
   },
@@ -117,7 +195,7 @@ export const OrderService = {
   },
 
   /**
-   * Get all orders for the current user
+   * Get all orders for a user
    * @param userId The ID of the user
    * @returns API response with user's orders
    */
@@ -126,7 +204,7 @@ export const OrderService = {
       const response = await axiosInstance.get(`/orders/user/${userId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting user orders:', error);
+      console.error(`Error getting orders for user ${userId}:`, error);
       throw error;
     }
   },
@@ -148,21 +226,6 @@ export const OrderService = {
   },
 
   /**
-   * Delete an order
-   * @param orderId The ID of the order to delete
-   * @returns API response with deleted order data
-   */
-  deleteOrder: async (orderId: string): Promise<ApiResponse<Order>> => {
-    try {
-      const response = await axiosInstance.delete(`/orders/${orderId}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error deleting order ${orderId}:`, error);
-      throw error;
-    }
-  },
-
-  /**
    * Update order status
    * @param orderId The ID of the order to update
    * @param status New status for the order
@@ -174,6 +237,21 @@ export const OrderService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating status for order ${orderId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete an order
+   * @param orderId The ID of the order to delete
+   * @returns API response with deleted order data
+   */
+  deleteOrder: async (orderId: string): Promise<ApiResponse<Order>> => {
+    try {
+      const response = await axiosInstance.delete(`/orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting order ${orderId}:`, error);
       throw error;
     }
   }

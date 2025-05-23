@@ -43,10 +43,36 @@ function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
       </View>
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
+          onPress={() => {router.navigate("/notifications")}} 
+          style={styles.iconButton}
+        >
+          <IconSymbol size={24} name="bell" color={Colors[colorScheme].tabIconSelected} />
+          {totalItems > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity 
           onPress={() => {router.navigate("/cart")}} 
           style={styles.iconButton}
         >
           <IconSymbol size={24} name="cart" color={Colors[colorScheme].tabIconSelected} />
+          {totalItems > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity 
+          onPress={() => {router.navigate("/chat")}} 
+          style={styles.iconButton}
+        >
+          <IconSymbol size={24} name="message" color={Colors[colorScheme].tabIconSelected} />
           {totalItems > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>

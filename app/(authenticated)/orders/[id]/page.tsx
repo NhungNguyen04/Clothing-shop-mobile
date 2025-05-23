@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack, useNavigation } from 'expo-router';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useOrderStore } from '@/store/OrderStore';
 import { ChevronLeft } from 'react-native-feather';
 
@@ -110,7 +110,7 @@ const OrderDetailsScreen = () => {
         <Text className="text-lg font-outfit-bold mb-3 text-gray-800">Order Information</Text>
         <View className="flex-row justify-between py-2 border-b border-gray-200">
           <Text className="text-gray-500 font-outfit flex-1">Order ID:</Text>
-          <Text className="text-gray-800 font-outfit font-medium flex-2 text-right">{currentOrder.id}</Text>
+          <Text className="text-gray-800 font-outfit font-medium flex-2 text-right">{currentOrder.id.slice(-8)}</Text>
         </View>
         <View className="flex-row justify-between py-2 border-b border-gray-200">
           <Text className="text-gray-500 font-outfit flex-1">Date:</Text>
@@ -124,6 +124,18 @@ const OrderDetailsScreen = () => {
             })}
           </Text>
         </View>
+        <View className="flex-row justify-between py-2 border-b border-gray-200">
+          <Text className="text-gray-500 font-outfit flex-1">Payment Method:</Text>
+          <Text className="text-gray-800 font-outfit-medium flex-2 text-right">
+            {currentOrder.paymentMethod}
+          </Text>
+        </View>
+        <View className="flex-row justify-between py-2 border-b border-gray-200">
+          <Text className="text-gray-500 font-outfit flex-1">Payment Status:</Text>
+          <Text className="text-gray-800 font-outfit-medium flex-2 text-right">
+            {currentOrder.paymentStatus}
+          </Text>
+        </View>
         <View className="flex-row justify-between py-2">
           <Text className="text-gray-500 font-outfit flex-1">Total:</Text>
           <Text className="text-gray-800 font-outfit-medium flex-2 text-right">
@@ -132,39 +144,78 @@ const OrderDetailsScreen = () => {
         </View>
       </View>
 
-      {/* Product Information */}
+      {/* Items Information */}
       <View className="bg-white rounded-lg p-4 mb-4 shadow">
-        <Text className="text-lg font-outfit-bold mb-3 text-gray-800">Product Information</Text>
-        <View className="py-2">
-          <Text className="text-gray-800 font-outfit-medium mb-1">Product ID: {currentOrder.productId}</Text>
-          <Text className="text-gray-500 font-outfit mb-1">Size: {currentOrder.size}</Text>
-          <Text className="text-gray-500 font-outfit mb-1">Quantity: {currentOrder.quantity}</Text>
-          <Text className="text-gray-500 font-outfit">Price: ${currentOrder.price.toFixed(2)}</Text>
-        </View>
+        <Text className="text-lg font-outfit-bold mb-3 text-gray-800">Order Items</Text>
+        
+        {currentOrder.orderItems && currentOrder.orderItems.map((item, index) => (
+          <View key={item.id} className={`py-3 ${index < currentOrder.orderItems.length - 1 ? 'border-b border-gray-200' : ''}`}>
+            <View className="flex-row">
+              {item.sizeStock.product.image && item.sizeStock.product.image.length > 0 && (
+                <Image 
+                  source={{ uri: item.sizeStock.product.image[0] }} 
+                  className="w-16 h-16 rounded mr-3"
+                />
+              )}
+              <View className="flex-1">
+                <Text className="text-gray-800 font-outfit-medium mb-1">{item.sizeStock.product.name}</Text>
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-500 font-outfit">Size: {item.sizeStock.size}</Text>
+                  <Text className="text-gray-500 font-outfit">Qty: {item.quantity}</Text>
+                </View>
+                <View className="flex-row justify-between mt-1">
+                  <Text className="text-gray-500 font-outfit">Price: ${(item.totalPrice / item.quantity).toFixed(2)}</Text>
+                  <Text className="text-gray-800 font-outfit-medium">Total: ${item.totalPrice.toFixed(2)}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ))}
+        
+        {(!currentOrder.orderItems || currentOrder.orderItems.length === 0) && (
+          <Text className="text-gray-500 font-outfit italic">No items available</Text>
+        )}
       </View>
 
       {/* Shipping Information */}
       <View className="bg-white rounded-lg p-4 mb-4 shadow">
         <Text className="text-lg font-outfit-bold mb-3 text-gray-800">Shipping Information</Text>
         
-        <View className="flex-row justify-between py-2 border-b border-gray-200">
-          <Text className="text-gray-500 font-outfit w-1/4">Name:</Text>
-          <Text className="text-gray-800 font-outfit-medium w-3/4 text-right">{currentOrder.customerName}</Text>
-        </View>
+        {currentOrder.shipment && (
+          <View className="flex-row justify-between py-2 border-b border-gray-200">
+            <Text className="text-gray-500 font-outfit w-1/3">Shipment Status:</Text>
+            <Text className="text-gray-800 font-outfit-medium w-2/3 text-right">
+              {currentOrder.shipment.status}
+            </Text>
+          </View>
+        )}
         
         <View className="flex-row justify-between py-2 border-b border-gray-200">
-          <Text className="text-gray-500 font-outfit w-1/4">Phone:</Text>
-          <Text className="text-gray-800 font-outfit-medium w-3/4 text-right">{currentOrder.phoneNumber}</Text>
+          <Text className="text-gray-500 font-outfit w-1/3">Phone:</Text>
+          <Text className="text-gray-800 font-outfit-medium w-2/3 text-right">{currentOrder.phoneNumber}</Text>
         </View>
         
-        {/* Modified address section to handle long text */}
+        {/* Address section */}
         <View className="py-2">
-          <Text className="text-gray-500 font-outfit mb-1">Address:</Text>
+          <Text className="text-gray-500 font-outfit mb-1">Delivery Address:</Text>
           <Text className="text-gray-800 font-outfit-medium mt-1">
             {currentOrder.address}
           </Text>
         </View>
       </View>
+
+      {/* Seller Information */}
+      {currentOrder.seller && (
+        <View className="bg-white rounded-lg p-4 mb-4 shadow">
+          <Text className="text-lg font-outfit-bold mb-3 text-gray-800">Seller Information</Text>
+          <View className="py-2">
+            <Text className="text-gray-800 font-outfit-medium">{currentOrder.seller.managerName}</Text>
+            {currentOrder.seller.email && (
+              <Text className="text-gray-500 font-outfit mt-1">{currentOrder.seller.email}</Text>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Action Buttons */}
       {currentOrder.status === 'PENDING' && (

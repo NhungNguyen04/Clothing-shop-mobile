@@ -15,6 +15,7 @@ interface DeliveryInfoProps {
     province?: string;
   };
   onDeliveryChange: (name: string, value: string) => void;
+  showNameEmail?: boolean;
 }
 
 interface Province {
@@ -34,7 +35,11 @@ interface Ward {
   name: string;
 }
 
-const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoProps) => {
+const DeliveryInformation = ({ 
+  deliveryInfo, 
+  onDeliveryChange, 
+  showNameEmail = true 
+}: DeliveryInfoProps) => {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
@@ -48,11 +53,36 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
   });
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Load province data
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
         const response = await axios.get("https://provinces.open-api.vn/api/?depth=3");
         setProvinces(response.data);
+        
+        // If we already have province data, try to match and select it
+        if (deliveryInfo.province) {
+          const matchedProvince = response.data.find(
+            (p: Province) => p.name.toLowerCase() === deliveryInfo.province?.toLowerCase()
+          );
+          
+          if (matchedProvince) {
+            setSelectedProvince(matchedProvince.code.toString());
+            setDistricts(matchedProvince.districts);
+            
+            // If we also have district data, try to match and select it
+            if (deliveryInfo.district) {
+              const matchedDistrict = matchedProvince.districts.find(
+                (d: District) => d.name.toLowerCase() === deliveryInfo.district?.toLowerCase()
+              );
+              
+              if (matchedDistrict) {
+                setSelectedDistrict(matchedDistrict.code.toString());
+                setWards(matchedDistrict.wards);
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch provinces:", error);
       } finally {
@@ -62,6 +92,17 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
     
     fetchProvinces();
   }, []);
+
+  // Update the full address string whenever components change
+  useEffect(() => {
+    // Make sure we update the parent component with direct field values
+    if (tempData.province) onDeliveryChange("province", tempData.province);
+    if (tempData.district) onDeliveryChange("district", tempData.district);
+    if (tempData.ward) onDeliveryChange("ward", tempData.ward);
+    if (tempData.street) onDeliveryChange("street", tempData.street);
+    
+    updateAddress(tempData);
+  }, [tempData]);
 
   const updateAddress = (newData: typeof tempData) => {
     const { street, ward, district, province } = newData;
@@ -79,9 +120,8 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
     const province = provinces.find((p) => p.code === Number(provinceCode));
     setDistricts(province ? province.districts : []);
 
-    const newData = { ...tempData, province: province?.name || "" };
+    const newData = { ...tempData, province: province?.name || "", district: "", ward: "" };
     setTempData(newData);
-    updateAddress(newData);
   };
 
   const handleDistrictChange = (districtCode: string) => {
@@ -90,16 +130,14 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
     const district = districts.find((d) => d.code === Number(districtCode));
     setWards(district ? district.wards : []);
 
-    const newData = { ...tempData, district: district?.name || "" };
+    const newData = { ...tempData, district: district?.name || "", ward: "" };
     setTempData(newData);
-    updateAddress(newData);
   };
 
   const handleWardChange = (wardCode: string) => {
     const ward = wards.find((w) => w.code === Number(wardCode))?.name || "";
     const newData = { ...tempData, ward };
     setTempData(newData);
-    updateAddress(newData);
   };
 
   const handleInputChange = (name: string, value: string) => {
@@ -108,7 +146,6 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
     if (name === "street") {
       const newData = { ...tempData, street: value };
       setTempData(newData);
-      updateAddress(newData);
     }
   };
 
@@ -127,23 +164,27 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
       
       <View className="space-y-2">
         {/* Full Name */}
-        <Text className="text-base mb-1">Full Name</Text>
-        <TextInput
-          className="border border-gray-300 rounded-md p-3 font-outfit text-base mb-3"
-          value={deliveryInfo.name || ""}
-          onChangeText={(value) => handleInputChange("name", value)}
-          placeholder="Full Name"
-        />
+        {showNameEmail && (
+          <>
+            <Text className="text-base mb-1">Full Name</Text>
+            <TextInput
+              className="border border-gray-300 rounded-md p-3 font-outfit text-base mb-3"
+              value={deliveryInfo.name || ""}
+              onChangeText={(value) => handleInputChange("name", value)}
+              placeholder="Full Name"
+            />
 
-        {/* Email */}
-        <Text className="text-base mb-1 font-outfit">Email</Text>
-        <TextInput
-          className="border border-gray-300 rounded-md p-3 text-base mb-3 font-outfit"
-          value={deliveryInfo.email || ""}
-          onChangeText={(value) => handleInputChange("email", value)}
-          placeholder="Email"
-          keyboardType="email-address"
-        />
+            {/* Email */}
+            <Text className="text-base mb-1 font-outfit">Email</Text>
+            <TextInput
+              className="border border-gray-300 rounded-md p-3 text-base mb-3 font-outfit"
+              value={deliveryInfo.email || ""}
+              onChangeText={(value) => handleInputChange("email", value)}
+              placeholder="Email"
+              keyboardType="email-address"
+            />
+          </>
+        )}
 
         {/* Phone Number */}
         <Text className="text-base mb-1 font-outfit">Phone Number</Text>
@@ -174,6 +215,13 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
           </Picker>
         </View>
 
+        {/* Display selected province text for debugging */}
+        {tempData.province ? (
+          <Text className="text-xs text-green-600 mb-2">
+            Selected: {tempData.province}
+          </Text>
+        ) : null}
+
         {/* District Select */}
         <Text className="text-base mb-1 font-outfit">District</Text>
         <View className="border border-gray-300 rounded-md mb-3">
@@ -193,6 +241,13 @@ const DeliveryInformation = ({ deliveryInfo, onDeliveryChange }: DeliveryInfoPro
             ))}
           </Picker>
         </View>
+        
+        {/* Display selected district text for debugging */}
+        {tempData.district ? (
+          <Text className="text-xs text-green-600 mb-2">
+            Selected: {tempData.district}
+          </Text>
+        ) : null}
 
         {/* Ward Select */}
         <Text className="text-base mb-1 font-outfit">Ward</Text>
