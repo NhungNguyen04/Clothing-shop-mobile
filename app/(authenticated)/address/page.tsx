@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useUserStore } from '../../../store/UserStore';
 import { useAuthStore } from '../../../store/AuthStore';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Address, formatFullAddress } from '../../../services/user';
 import { parseAddress } from '../../../utils/stringUtils';
@@ -243,6 +243,12 @@ export default function AddressScreen() {
   
   return (
     <ScrollView style={styles.container}>
+      <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute top-4 left-4 z-10 p-2 bg-white rounded-full shadow"
+        >
+          <Ionicons name="arrow-back" size={24} color="#2e64e5" />
+        </TouchableOpacity>
       <Stack.Screen 
         options={{
           title: 'Manage Addresses',

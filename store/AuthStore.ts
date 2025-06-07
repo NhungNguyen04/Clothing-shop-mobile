@@ -1,11 +1,19 @@
 import { create } from 'zustand';
 import { User, UserService, UpdateUserData } from '../services/user';
+import { Seller } from '../services/seller'
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User | null, token: string | null) => void;
+  
+  // New seller-related properties
+  isSeller: boolean;
+  seller: Seller | null;
+  
+  // Actions
+  setAuth: (user: User, token: string) => void;
+  setSeller: (seller: Seller | null) => void;
   clearAuth: () => void;
   updateUser: (updateData: UpdateUserData) => Promise<User | null>;
   refreshUserData: () => Promise<User | null>;
@@ -15,17 +23,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  
+  isSeller: false,
+  seller: null,
+
   setAuth: (user, token) => set({ 
     user, 
     token,
-    isAuthenticated: !!user && !!token 
+    isAuthenticated: !!user && !!token ,
+    isSeller: user?.role === 'SELLER'
   }),
   
+  setSeller: (seller) => set({ 
+    seller,
+    isSeller: seller !== null 
+  }),
+
   clearAuth: () => set({ 
     user: null, 
     token: null,
-    isAuthenticated: false 
+    isAuthenticated: false,
+    isSeller: false,
+    seller: null
   }),
   
   updateUser: async (updateData) => {

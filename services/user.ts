@@ -1,6 +1,5 @@
 import axiosInstance from './axiosInstance';
 import { useAuthStore } from '../store/AuthStore';
-import { normalizeVietnameseText } from '../utils/stringUtils';
 
 // Address type to match backend schema with standardized fields
 export type Address = {
@@ -24,6 +23,7 @@ export type User = {
   image?: string;
   address?: Address[];
   postalCode?: string;
+  role: 'USER' | 'SELLER' | 'ADMIN';
 };
 
 // Types for update user request
@@ -73,7 +73,9 @@ export class UserService {
       if (response.data.success) {
         // Update store with latest user data
         const token = useAuthStore.getState().token;
-        useAuthStore.getState().setAuth({...response.data.data}, token);
+        if (token) { // Add null check for token
+          useAuthStore.getState().setAuth({...response.data.data}, token);
+        }
         return response.data.data;
       } else {
         throw new Error(response.data.message || 'Failed to get user data');
@@ -93,7 +95,9 @@ export class UserService {
         // Update user in store with the updated data
         const updatedUser = response.data.data;
         const token = useAuthStore.getState().token;
-        useAuthStore.getState().setAuth(updatedUser, token);
+        if (token) { // Add null check for token
+          useAuthStore.getState().setAuth(updatedUser, token);
+        }
         return updatedUser;
       } else {
         throw new Error(response.data.message || 'Failed to update user');
