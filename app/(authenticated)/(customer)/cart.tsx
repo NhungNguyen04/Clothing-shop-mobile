@@ -332,7 +332,7 @@ export default function CartScreen() {
           } px-6 py-4 items-center w-4/5 mx-auto`}
           disabled={countSelectedItems() === 0}
           onPress={() => {
-            router.push('/(authenticated)/checkout/page')
+            router.push('/(authenticated)/(customer)/checkout/page')
           }}
         >
           <Text className="text-white font-outfit-medium">

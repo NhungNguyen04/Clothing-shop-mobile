@@ -74,7 +74,7 @@ const CheckoutScreen = () => {
         <Text className="text-lg mb-5 font-outfit">Your cart is empty</Text>
         <TouchableOpacity
           className="bg-blue-600 px-5 py-3 rounded"
-          onPress={() => router.push('/(authenticated)/(tabs)')}
+          onPress={() => router.push('/(authenticated)/(customer)/(tabs)')}
         >
           <Text className="text-white text-base font-outfit">Shop Now</Text>
         </TouchableOpacity>
@@ -160,8 +160,8 @@ const CheckoutScreen = () => {
       
       if (success) {
         Alert.alert('Success', 'Your order has been placed successfully!', [
-          { text: 'View Orders', onPress: () => router.push('/(authenticated)/orders/page') },
-          { text: 'Continue Shopping', onPress: () => router.push('/(authenticated)/(tabs)') },
+          { text: 'View Orders', onPress: () => router.push('/(authenticated)/(customer)/(tabs)/orders') },
+          { text: 'Continue Shopping', onPress: () => router.push('/(authenticated)/(customer)/(tabs)') },
         ]);
       }
     } catch (error) {
@@ -204,7 +204,7 @@ const CheckoutScreen = () => {
             {selectedAddress ? (
               <TouchableOpacity 
                 className="p-3"
-                onPress={() => router.push('/(authenticated)/address/page')}
+                onPress={() => router.push('/(authenticated)/(customer)/address/page')}
               >
                 <Text className="font-outfit-medium text-base mb-1">{selectedAddress.address}</Text>
                 <Text className="font-outfit text-gray-600">📞 {selectedAddress.phoneNumber}</Text>
@@ -213,7 +213,7 @@ const CheckoutScreen = () => {
             ) : (
               <TouchableOpacity 
                 className="p-3 items-center"
-                onPress={() => router.push('/(authenticated)/address/page')}
+                onPress={() => router.push('/(authenticated)/(customer)/address/page')}
               >
                 <Text className="font-outfit text-blue-500">Add a new address</Text>
               </TouchableOpacity>

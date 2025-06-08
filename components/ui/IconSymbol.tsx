@@ -24,6 +24,7 @@ const MAPPING = {
   'clock': 'access-time',
   'bell': 'notifications',
   'message': 'message',
+  'list.clipboard.fill': 'list',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

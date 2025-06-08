@@ -50,37 +50,6 @@ export default function ProfileScreen() {
         </View>
 
         <View className="bg-white p-6 mb-4">
-          <Text className="text-lg font-bold text-gray-800 mb-4">Account</Text>
-          
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100"
-            onPress={() => router.navigate('/(authenticated)/(tabs)/orders')}>
-            <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
-              <Text className="text-blue-500 font-bold">🛒</Text>
-            </View>
-            <Text className="flex-1 text-gray-700">My Orders</Text>
-            <Text className="text-gray-400">→</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
-            <View className="w-8 h-8 rounded-full bg-green-100 items-center justify-center mr-3">
-              <Text className="text-green-500 font-bold">💖</Text>
-            </View>
-            <Text className="flex-1 text-gray-700">Wishlist</Text>
-            <Text className="text-gray-400">→</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/address/page')}
-          >
-            <View className="w-8 h-8 rounded-full bg-purple-100 items-center justify-center mr-3">
-              <Text className="text-purple-500 font-bold">🏠</Text>
-            </View>
-            <Text className="flex-1 text-gray-700">Shipping Addresses</Text>
-            <Text className="text-gray-400">→</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View className="bg-white p-6 mb-4">
           <Text className="text-lg font-bold text-gray-800 mb-4">Settings</Text>
           
           <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
@@ -99,12 +68,12 @@ export default function ProfileScreen() {
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
            <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/sellerRegister/page')}
+            onPress={() => router.navigate('/(authenticated)/(customer)/(tabs)')}
           >
             <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
               <Text className="text-red-500 font-bold">🧑</Text>
             </View>
-            <Text className="flex-1 text-gray-700">Seller section</Text>
+            <Text className="flex-1 text-gray-700">Customer section</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
         </View>

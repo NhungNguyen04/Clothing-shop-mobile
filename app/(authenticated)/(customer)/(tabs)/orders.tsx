@@ -19,7 +19,7 @@ const OrdersScreen:React.FC = () => {
   
   const handleOrderPress = (orderId: string) => {
     router.push({
-      pathname: "/(authenticated)/orders/[id]/page",
+      pathname: "/(authenticated)/(customer)/orders/[id]/page",
       params: { id: orderId }
     });
   };
@@ -75,7 +75,7 @@ const OrdersScreen:React.FC = () => {
         <Text className="text-center mb-4">You haven't placed any orders yet</Text>
         <TouchableOpacity 
           className="bg-blue-600 px-5 py-2 rounded" 
-          onPress={() => router.push('/(authenticated)/(tabs)')}
+          onPress={() => router.push('/(authenticated)/(customer)/(tabs)')}
         >
           <Text className="text-white text-center">Shop Now</Text>
         </TouchableOpacity>

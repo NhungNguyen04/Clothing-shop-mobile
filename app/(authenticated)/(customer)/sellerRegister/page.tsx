@@ -209,7 +209,7 @@ export default function SellerRegisterPage() {
         Alert.alert(
           'Application Submitted',
           'Your seller application has been submitted and is pending review.',
-          [{ text: 'OK', onPress: () => router.push('/(authenticated)/(tabs)/profile') }]
+          [{ text: 'OK', onPress: () => router.push('/(authenticated)/(customer)/(tabs)/profile') }]
         );
       } else {
         throw new Error(response.message || 'Failed to register as seller');
@@ -230,7 +230,7 @@ export default function SellerRegisterPage() {
       
       if (!user?.id) {
         Alert.alert('Error', 'You must be logged in to access this page');
-        router.push('/(authenticated)/(tabs)/profile');
+        router.push('/(authenticated)/(customer)/(tabs)/profile');
         return;
       }
       
@@ -308,7 +308,7 @@ export default function SellerRegisterPage() {
             Your seller application is pending review by our team. This typically takes 2-3 business days.
           </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(authenticated)/(tabs)/profile')}
+            onPress={() => router.push('/(authenticated)/(customer)/(tabs)/profile')}
             className="bg-pink-500 rounded-lg py-3 px-6"
           >
             <Text className="text-white font-semibold">Return to Profile</Text>
@@ -328,7 +328,7 @@ export default function SellerRegisterPage() {
             Unfortunately, your seller application has been rejected. Please contact customer support for more information.
           </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(authenticated)/(tabs)/profile')}
+            onPress={() => router.push('/(authenticated)/(customer)/(tabs)/profile')}
             className="bg-pink-500 rounded-lg py-3 px-6"
           >
             <Text className="text-white font-semibold">Return to Profile</Text>

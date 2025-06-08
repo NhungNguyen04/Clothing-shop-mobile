@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { useUserStore } from '../../../store/UserStore';
-import { useAuthStore } from '../../../store/AuthStore';
+import { useUserStore } from '../../../../store/UserStore';
+import { useAuthStore } from '../../../../store/AuthStore';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Address, formatFullAddress } from '../../../services/user';
-import { parseAddress } from '../../../utils/stringUtils';
-import DeliveryInformation from '../../../components/DeliveryInformation';
+import { Address, formatFullAddress } from '../../../../services/user';
+import { parseAddress } from '../../../../utils/stringUtils';
+import DeliveryInformation from '../../../../components/DeliveryInformation';
 
 export default function AddressScreen() {
   const { getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, setCurrentAddress, isLoading, error } = useUserStore();

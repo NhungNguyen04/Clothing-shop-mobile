@@ -53,7 +53,7 @@ export default function ProfileScreen() {
           <Text className="text-lg font-bold text-gray-800 mb-4">Account</Text>
           
           <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100"
-            onPress={() => router.navigate('/(authenticated)/(tabs)/orders')}>
+            onPress={() => router.navigate('/(authenticated)/(customer)/(tabs)/orders')}>
             <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
               <Text className="text-blue-500 font-bold">🛒</Text>
             </View>
@@ -70,7 +70,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/address/page')}
+            onPress={() => router.navigate('/(authenticated)/(customer)/address/page')}
           >
             <View className="w-8 h-8 rounded-full bg-purple-100 items-center justify-center mr-3">
               <Text className="text-purple-500 font-bold">🏠</Text>
@@ -99,7 +99,7 @@ export default function ProfileScreen() {
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
            <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/sellerRegister/page')}
+            onPress={() => router.navigate('/(authenticated)/(customer)/sellerRegister/page')}
           >
             <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
               <Text className="text-red-500 font-bold">🧑</Text>
