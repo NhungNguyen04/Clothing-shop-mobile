@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useUserStore } from '../store/UserStore';
-import { Address, formatFullAddress } from '../services/user';
+import { useAuthStore } from '@/store/AuthStore';
+import AddressService, { Address } from '../services/address';
 import DeliveryInformation from './DeliveryInformation';
 
 interface AddressSelectorProps {
@@ -16,14 +16,11 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
   onNewAddressCreated,
   initialAddress 
 }) => {
-  const { 
-    getUserAddresses, 
-    addresses, 
-    addUserAddress, 
-    currentAddress,
-    setCurrentAddress,
-    isLoading 
-  } = useUserStore();
+  const { user } = useAuthStore();
+  
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<Address | null>(null);
   
   const [showModal, setShowModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(initialAddress || currentAddress);
@@ -43,10 +40,12 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
   
   const [saveToAccount, setSaveToAccount] = useState(true);
   
+  // Fetch addresses on component mount
   useEffect(() => {
-    getUserAddresses();
+    fetchUserAddresses();
   }, []);
   
+  // Update selected address when initialAddress or currentAddress changes
   useEffect(() => {
     if (initialAddress) {
       setSelectedAddress(initialAddress);
@@ -55,9 +54,33 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     }
   }, [initialAddress, currentAddress]);
   
+  // Fetch addresses from the API
+  const fetchUserAddresses = async () => {
+    if (!user?.id) return;
+    
+    setIsLoading(true);
+    try {
+      const userAddresses = await AddressService.getUserAddresses(user.id);
+      setAddresses(userAddresses);
+      
+      // Set the first address as current if none is selected
+      if (userAddresses.length > 0 && !currentAddress) {
+        setCurrentAddress(userAddresses[0]);
+        if (!selectedAddress) {
+          setSelectedAddress(userAddresses[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      Alert.alert('Error', 'Failed to load addresses');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleSelect = (address: Address) => {
     setSelectedAddress(address);
-    setCurrentAddress(address); // Set as current address in store
+    setCurrentAddress(address);
     onAddressSelected(address);
     setShowModal(false);
   };
@@ -76,7 +99,6 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     setSaveToAccount(true);
   };
   
-  // When adding a new address or editing, properly utilize DeliveryInformation
   const handleDeliveryInfoChange = (name: string, value: string) => {
     setDeliveryInfo((prev) => ({
       ...prev,
@@ -106,12 +128,14 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     }
     
     // Format full address string
-    const fullAddress = formatFullAddress(
-      deliveryInfo.street,
-      deliveryInfo.ward,
-      deliveryInfo.district,
-      deliveryInfo.province
-    );
+    const fullAddress = AddressService.formatAddressForDisplay({
+      address: '',
+      phoneNumber: deliveryInfo.phoneNumber,
+      street: deliveryInfo.street,
+      ward: deliveryInfo.ward,
+      district: deliveryInfo.district,
+      province: deliveryInfo.province
+    });
     
     // Create new address object
     const newAddress: Address = {
@@ -124,26 +148,50 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     };
     
     // If user wants to save to account
-    if (saveToAccount) {
-      const success = await addUserAddress(
-        deliveryInfo.street.trim(),
-        deliveryInfo.ward.trim(),
-        deliveryInfo.district.trim(),
-        deliveryInfo.province.trim(),
-        deliveryInfo.phoneNumber.trim()
-      );
-      
-      if (!success) {
+    if (saveToAccount && user?.id) {
+      setIsLoading(true);
+      try {
+        const addressData = {
+          userId: user.id,
+          phoneNumber: deliveryInfo.phoneNumber,
+          address: fullAddress,
+          street: deliveryInfo.street,
+          ward: deliveryInfo.ward,
+          district: deliveryInfo.district,
+          province: deliveryInfo.province
+        };
+        
+        const savedAddress = await AddressService.createAddress(addressData);
+        
+        // Update the address list
+        await fetchUserAddresses();
+        
+        // Use the saved address with its ID
+        setSelectedAddress(savedAddress);
+        onAddressSelected(savedAddress);
+        if (onNewAddressCreated) {
+          onNewAddressCreated(savedAddress);
+        }
+      } catch (error) {
+        console.error('Error saving address:', error);
         Alert.alert('Error', 'Failed to save address to your account');
-        return;
+        
+        // Still use the address for the current session
+        setSelectedAddress(newAddress);
+        onAddressSelected(newAddress);
+        if (onNewAddressCreated) {
+          onNewAddressCreated(newAddress);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    }
-    
-    // Use this address for the current order
-    setSelectedAddress(newAddress);
-    onAddressSelected(newAddress);
-    if (onNewAddressCreated) {
-      onNewAddressCreated(newAddress);
+    } else {
+      // Use this address for the current order without saving
+      setSelectedAddress(newAddress);
+      onAddressSelected(newAddress);
+      if (onNewAddressCreated) {
+        onNewAddressCreated(newAddress);
+      }
     }
     
     // Reset and close forms
@@ -153,15 +201,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
   };
   
   const getFormattedAddress = (address: Address) => {
-    if (address.street && address.district && address.province) {
-      return formatFullAddress(
-        address.street,
-        address.ward,
-        address.district,
-        address.province
-      );
-    }
-    return address.address;
+    return AddressService.formatAddressForDisplay(address);
   };
   
   const renderItem = ({ item }: { item: Address }) => {

@@ -4,15 +4,16 @@ import { useUserStore } from '../../../../store/UserStore';
 import { useAuthStore } from '../../../../store/AuthStore';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Address, formatFullAddress } from '../../../../services/user';
+import AddressService, { Address } from '../../../../services/address';
 import { parseAddress } from '../../../../utils/stringUtils';
 import DeliveryInformation from '../../../../components/DeliveryInformation';
 
 export default function AddressScreen() {
-  const { getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, setCurrentAddress, isLoading, error } = useUserStore();
   const { user } = useAuthStore();
-  
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [currentAddressId, setCurrentAddressId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   
   // Use the same delivery info structure as in checkout and address selector
@@ -33,16 +34,28 @@ export default function AddressScreen() {
   
   // Load the user's saved addresses
   const loadUserAddresses = async () => {
-    const userAddresses = await getUserAddresses();
-    setAddresses(userAddresses);
+    if (!user?.id) return;
     
-    // Pre-fill user information if available
-    setDeliveryInfo(prev => ({
-      ...prev,
-      name: user?.name || '',
-      email: user?.email || '',
-      phoneNumber: user?.phoneNumber || ''
-    }));
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const userAddresses = await AddressService.getUserAddresses(user.id);
+      setAddresses(userAddresses);
+      
+      // Pre-fill user information if available
+      setDeliveryInfo(prev => ({
+        ...prev,
+        name: user?.name || '',
+        email: user?.email || '',
+        phoneNumber: user?.phoneNumber || ''
+      }));
+    } catch (err) {
+      console.error('Error loading addresses:', err);
+      setError('Failed to load addresses. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Reset form fields
@@ -99,6 +112,9 @@ export default function AddressScreen() {
   
   // Delete an address
   const handleDelete = (index: number) => {
+    const addressId = addresses[index]?.id;
+    if (!addressId) return;
+    
     Alert.alert(
       'Delete Address',
       'Are you sure you want to delete this address?',
@@ -111,11 +127,16 @@ export default function AddressScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const success = await deleteUserAddress(index);
-            if (success) {
-              const updatedAddresses = await getUserAddresses();
-              setAddresses(updatedAddresses);
+            setIsLoading(true);
+            try {
+              await AddressService.deleteAddress(addressId);
+              await loadUserAddresses();
               Alert.alert('Success', 'Address deleted successfully');
+            } catch (err) {
+              console.error('Error deleting address:', err);
+              Alert.alert('Error', 'Failed to delete address');
+            } finally {
+              setIsLoading(false);
             }
           }
         }
@@ -125,12 +146,19 @@ export default function AddressScreen() {
   
   // Set as default address
   const handleSetDefault = (address: Address) => {
-    setCurrentAddress(address);
+    if (!address.id) return;
+    
+    setCurrentAddressId(address.id);
     Alert.alert('Success', 'Default address updated');
   };
   
   // Save or update an address
   const handleSaveAddress = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'You need to be logged in to save addresses');
+      return;
+    }
+    
     if (!deliveryInfo.street.trim()) {
       Alert.alert('Error', 'Please enter a street address');
       return;
@@ -151,58 +179,61 @@ export default function AddressScreen() {
       return;
     }
     
-    let success = false;
+    setIsLoading(true);
+    setError(null);
     
-    if (editIndex !== null) {
-      // Update existing address
-      success = await updateUserAddress(
-        editIndex,
-        deliveryInfo.street.trim(),
-        deliveryInfo.ward.trim(),
-        deliveryInfo.district.trim(),
-        deliveryInfo.province.trim(),
-        deliveryInfo.phoneNumber.trim()
-      );
-    } else {
-      // Add new address
-      success = await addUserAddress(
-        deliveryInfo.street.trim(),
-        deliveryInfo.ward.trim(),
-        deliveryInfo.district.trim(),
-        deliveryInfo.province.trim(),
-        deliveryInfo.phoneNumber.trim()
-      );
-    }
+    // Format full address for display
+    const fullAddress = AddressService.formatAddressForDisplay({
+      address: '',
+      phoneNumber: deliveryInfo.phoneNumber,
+      street: deliveryInfo.street,
+      ward: deliveryInfo.ward,
+      district: deliveryInfo.district,
+      province: deliveryInfo.province
+    });
     
-    if (success) {
+    try {
+      if (editIndex !== null && addresses[editIndex]?.id) {
+        // Update existing address
+        await AddressService.updateAddress(addresses[editIndex].id!, {
+          phoneNumber: deliveryInfo.phoneNumber.trim(),
+          address: fullAddress,
+          street: deliveryInfo.street.trim(),
+          ward: deliveryInfo.ward.trim(),
+          district: deliveryInfo.district.trim(),
+          province: deliveryInfo.province.trim()
+        });
+      } else {
+        // Create new address
+        await AddressService.createAddress({
+          userId: user.id,
+          phoneNumber: deliveryInfo.phoneNumber.trim(),
+          address: fullAddress,
+          street: deliveryInfo.street.trim(),
+          ward: deliveryInfo.ward.trim(),
+          district: deliveryInfo.district.trim(),
+          province: deliveryInfo.province.trim()
+        });
+      }
+      
       Alert.alert(
         'Success', 
         `Address ${editIndex !== null ? 'updated' : 'added'} successfully`,
         [{ text: 'OK' }]
       );
       resetForm();
-      const updatedAddresses = await getUserAddresses();
-      setAddresses(updatedAddresses);
-    } else {
-      Alert.alert(
-        'Error',
-        error || `Failed to ${editIndex !== null ? 'update' : 'add'} address. Please try again later.`,
-        [{ text: 'OK' }]
-      );
+      await loadUserAddresses();
+    } catch (err) {
+      console.error('Error saving address:', err);
+      setError(`Failed to ${editIndex !== null ? 'update' : 'add'} address. Please try again later.`);
+    } finally {
+      setIsLoading(false);
     }
   };
   
   // Display formatted address
   const getFormattedAddress = (address: Address) => {
-    if (address.street && address.district && address.province) {
-      return formatFullAddress(
-        address.street,
-        address.ward,
-        address.district,
-        address.province
-      );
-    }
-    return address.address;
+    return AddressService.formatAddressForDisplay(address);
   };
   
   // Render an address item

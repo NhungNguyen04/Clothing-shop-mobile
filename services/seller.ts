@@ -50,10 +50,13 @@ export interface Seller {
 }
 
 // Create a new seller
-export const createSeller = async (sellerData: CreateSellerInput): Promise<SellerResponse> => {
+// Create a new seller
+export const createSeller = async (sellerData: CreateSellerInput): Promise<any> => {
   try {
     const response = await axiosInstance.post('/sellers', sellerData);
-    return response;
+    
+    // Return the direct response data which should contain the seller object
+    return response.data;
   } catch (error) {
     console.error('Error creating seller:', error);
     throw error;

@@ -1,21 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, ScrollView, RefreshControl } from 'react-native';
 import { useOrderStore } from '@/store/OrderStore';
-import { Order, OrderStatus } from '@/services/order';
+import { OrderStatus } from '@/services/order';
 import { router } from 'expo-router';
 import OrderCard from '@/components/OrderCard';
 import { ChevronLeft } from 'react-native-feather';
 
 const STATUS_TABS: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
-
-const OrdersScreen:React.FC = () => {
+const OrdersScreen: React.FC = () => {
   const { orders, fetchUserOrders, isLoading, error, cancelOrder } = useOrderStore();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'ALL'>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
   
   useEffect(() => {
     fetchUserOrders();
   }, []);
+  
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchUserOrders();
+    setRefreshing(false);
+  };
   
   const handleOrderPress = (orderId: string) => {
     router.push({
@@ -27,18 +33,24 @@ const OrdersScreen:React.FC = () => {
   const handleCancelOrder = (orderId: string) => {
     Alert.alert(
       "Cancel Order",
-      "Are you sure you want to cancel this order?",
+      "Are you sure you want to cancel this order? This action cannot be undone.",
       [
         {
-          text: "No",
+          text: "No, Keep Order",
           style: "cancel"
         },
         {
-          text: "Yes",
+          text: "Yes, Cancel Order",
+          style: "destructive",
           onPress: async () => {
-            const success = await cancelOrder(orderId);
-            if (success) {
-              Alert.alert("Success", "Order cancelled successfully");
+            try {
+              const success = await cancelOrder(orderId);
+              if (success) {
+                Alert.alert("Success", "Order cancelled successfully");
+              }
+            } catch (error) {
+              console.error("Error cancelling order:", error);
+              Alert.alert("Error", "Failed to cancel order. Please try again.");
             }
           }
         }
@@ -50,7 +62,7 @@ const OrdersScreen:React.FC = () => {
     ? orders 
     : orders.filter(order => order.status === selectedStatus);
   
-  if (isLoading) {
+  if (isLoading && !refreshing) {
     return (
       <View className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color="#2e64e5" />
@@ -62,7 +74,7 @@ const OrdersScreen:React.FC = () => {
     return (
       <View className="flex-1 justify-center items-center px-4">
         <Text className="text-red-600 text-center">{error}</Text>
-        <TouchableOpacity className="bg-pink-500 px-5 py-2 rounded" onPress={fetchUserOrders}>
+        <TouchableOpacity className="bg-pink-500 px-5 py-2 rounded mt-4" onPress={fetchUserOrders}>
           <Text className="text-white text-center">Retry</Text>
         </TouchableOpacity>
       </View>
@@ -121,13 +133,17 @@ const OrdersScreen:React.FC = () => {
       <FlatList
         data={filteredOrders}
         keyExtractor={item => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         renderItem={({ item }) => (
           <OrderCard
             order={item}
             onPress={() => handleOrderPress(item.id)}
-            onCancel={item.status === 'PENDING' ? () => handleCancelOrder(item.id) : undefined}
+            onCancel={['PENDING', 'PROCESSING'].includes(item.status) ? () => handleCancelOrder(item.id) : undefined}
           />
-        )}
+        )
+        }
         contentContainerStyle={{ padding: 16 }}
       />
     </View>

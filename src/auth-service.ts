@@ -2,7 +2,7 @@ import * as WebBrowser from "expo-web-browser"
 import { Linking } from "react-native"
 
 // Hardcode the API URL instead of using process.env
-const API_URL = "https://clothing-shop-be-production.up.railway.app" // Replace with your actual backend URL
+const API_URL = "https://clothing-shop-be-production.up.railway.app"
 const DEEP_LINK_SCHEME = "nh-clothing://" 
 
 export class AuthService {

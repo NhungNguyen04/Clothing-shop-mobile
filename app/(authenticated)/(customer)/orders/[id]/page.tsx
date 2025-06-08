@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useOrderStore } from '@/store/OrderStore';
@@ -8,6 +8,7 @@ const OrderDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { getOrderById, cancelOrder, isLoading, error, currentOrder } = useOrderStore();
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -22,15 +23,24 @@ const OrderDetailsScreen = () => {
   const handleCancelOrder = () => {
     Alert.alert(
       "Cancel Order",
-      "Are you sure you want to cancel this order?",
+      "Are you sure you want to cancel this order? This action cannot be undone.",
       [
-        { text: "No", style: "cancel" },
+        { text: "No, Keep Order", style: "cancel" },
         {
-          text: "Yes",
+          text: "Yes, Cancel Order",
+          style: "destructive",
           onPress: async () => {
-            const success = await cancelOrder(id);
-            if (success) {
-              Alert.alert("Success", "Order cancelled successfully");
+            try {
+              setCancelling(true);
+              const success = await cancelOrder(id);
+              if (success) {
+                Alert.alert("Success", "Your order has been cancelled successfully.");
+              }
+            } catch (error) {
+              console.error("Error during cancellation:", error);
+              Alert.alert("Error", "Failed to cancel order. Please try again.");
+            } finally {
+              setCancelling(false);
             }
           }
         }
@@ -218,12 +228,17 @@ const OrderDetailsScreen = () => {
       )}
 
       {/* Action Buttons */}
-      {currentOrder.status === 'PENDING' && (
+      {(currentOrder.status === 'PENDING' || currentOrder.status === 'PROCESSING') && (
         <TouchableOpacity
           className="bg-red-500 py-4 items-center mb-3"
           onPress={handleCancelOrder}
+          disabled={cancelling}
         >
-          <Text className="text-white font-outfit-medium">Cancel Order</Text>
+          {cancelling ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <Text className="text-white font-outfit-medium">Cancel Order</Text>
+          )}
         </TouchableOpacity>
       )}
 

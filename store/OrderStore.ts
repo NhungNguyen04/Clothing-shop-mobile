@@ -30,7 +30,7 @@ interface OrderState {
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
   
   // Cancel an order
-  cancelOrder: (orderId: string, reason?: string) => Promise<boolean>;
+  cancelOrder: (orderId: string) => Promise<boolean>;
   
   clearOrderError: () => void;
 }
@@ -200,17 +200,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
-  cancelOrder: async (orderId: string, reason?: string): Promise<boolean> => {
+  cancelOrder: async (orderId: string): Promise<boolean> => {
     set({ isLoading: true, error: null });
     
     try {
-      // Create update data with status and optional cancel reason
-      const updateData: UpdateOrderInput = { 
-        status: 'CANCELLED',
-        cancelReason: reason
-      };
       
-      const response = await OrderService.updateOrder(orderId, updateData);
+      const response = await OrderService.cancelOrder(orderId);
       
       if (response.success && response.data) {
         // Update the order in the local state

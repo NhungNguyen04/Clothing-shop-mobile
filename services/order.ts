@@ -242,6 +242,37 @@ export const OrderService = {
   },
 
   /**
+   * Update order status to the next status in the workflow
+   * @param orderId The ID of the order to update
+   * @returns API response with updated order data
+   */
+  progressOrderStatus: async (orderId: string): Promise<ApiResponse<Order>> => {
+    try {
+      const response = await axiosInstance.patch(`/orders/${orderId}/status`, {});
+      return response.data;
+    } catch (error) {
+      console.error(`Error progressing status for order ${orderId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cancel an order
+   * @param orderId The ID of the order to cancel
+   * @param cancelReason Optional reason for cancellation
+   * @returns API response with cancelled order data
+   */
+  cancelOrder: async (orderId: string, cancelReason?: string): Promise<ApiResponse<Order>> => {
+    try {
+      const response = await axiosInstance.patch(`/orders/${orderId}/cancel`, { cancelReason });
+      return response.data;
+    } catch (error) {
+      console.error(`Error cancelling order ${orderId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Delete an order
    * @param orderId The ID of the order to delete
    * @returns API response with deleted order data

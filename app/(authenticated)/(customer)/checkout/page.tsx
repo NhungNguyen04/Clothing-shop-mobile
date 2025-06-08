@@ -7,7 +7,7 @@ import { useUserStore } from '@/store/UserStore';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import DeliveryInformation from '@/components/DeliveryInformation';
-import { Address } from '@/services/user';
+import AddressService, { Address } from '@/services/address';
 import { normalizeVietnameseText } from '@/utils/stringUtils';
 
 const CheckoutScreen = () => {
@@ -15,13 +15,13 @@ const CheckoutScreen = () => {
   const { itemsBySeller, cart } = useCartStore();
   const { checkoutCart, isLoading, error, clearOrderError } = useOrderStore();
   const { user } = useAuthStore();
-  const { getUserAddress, getUserAddresses, addUserAddress } = useUserStore();
   
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VIETQR'>('COD');
   const [processingOrder, setProcessingOrder] = useState(false);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [saveAddressToAccount, setSaveAddressToAccount] = useState(true);
+  const [userAddresses, setUserAddresses] = useState<Address[]>([]);
 
   // Delivery information state
   const [deliveryInfo, setDeliveryInfo] = useState({
@@ -38,20 +38,23 @@ const CheckoutScreen = () => {
   useEffect(() => {
     // Check if user has any saved addresses
     const loadUserAddress = async () => {
-      const addresses = await getUserAddresses();
-      if (addresses.length > 0) {
-        setUseSavedAddress(true);
-        const defaultAddress = await getUserAddress();
-        if (defaultAddress) {
-          setSelectedAddress(defaultAddress);
-        } else {
-          setSelectedAddress(addresses[0]);
+      if (user?.id) {
+        try {
+          const addresses = await AddressService.getUserAddresses(user.id);
+          setUserAddresses(addresses);
+          
+          if (addresses.length > 0) {
+            setUseSavedAddress(true);
+            setSelectedAddress(addresses[0]);
+          }
+        } catch (error) {
+          console.error('Failed to load addresses:', error);
         }
       }
     };
     
     loadUserAddress();
-  }, []);
+  }, [user?.id]);
 
   // Update delivery info when selected address changes
   useEffect(() => {
@@ -119,17 +122,18 @@ const CheckoutScreen = () => {
     }
     
     // If user wants to save this address and it's not from saved addresses
-    if (saveAddressToAccount && !useSavedAddress) {
-      // Save address to user's account
+    if (saveAddressToAccount && !useSavedAddress && user?.id) {
+      // Save address to user's account using AddressService
       try {
-        await addUserAddress(
-          deliveryInfo.street,
-          deliveryInfo.ward,
-          deliveryInfo.district,
-          deliveryInfo.province,
-          deliveryInfo.phoneNumber,
-          // Add postal code if needed
-        );
+        await AddressService.createAddress({
+          userId: user.id,
+          phoneNumber: deliveryInfo.phoneNumber,
+          address: deliveryInfo.address,
+          street: deliveryInfo.street,
+          ward: deliveryInfo.ward,
+          district: deliveryInfo.district,
+          province: deliveryInfo.province,
+        });
       } catch (error) {
         console.error('Failed to save address:', error);
         // Continue with checkout even if saving address fails
@@ -139,13 +143,15 @@ const CheckoutScreen = () => {
     setProcessingOrder(true);
 
     try {
-      // Format complete address string
-      const formattedAddress = formatFullAddress(
-        deliveryInfo.street,
-        deliveryInfo.ward,
-        deliveryInfo.district,
-        deliveryInfo.province
-      );
+      // Format complete address string using AddressService utility
+      const formattedAddress = useSavedAddress && selectedAddress 
+        ? AddressService.formatAddressForDisplay(selectedAddress)
+        : formatFullAddress(
+            deliveryInfo.street,
+            deliveryInfo.ward,
+            deliveryInfo.district,
+            deliveryInfo.province
+          );
 
       // Extract postal code if available from the selected address
       const postalCode = selectedAddress?.postalCode || undefined;
@@ -206,7 +212,9 @@ const CheckoutScreen = () => {
                 className="p-3"
                 onPress={() => router.push('/(authenticated)/(customer)/address/page')}
               >
-                <Text className="font-outfit-medium text-base mb-1">{selectedAddress.address}</Text>
+                <Text className="font-outfit-medium text-base mb-1">
+                  {AddressService.formatAddressForDisplay(selectedAddress)}
+                </Text>
                 <Text className="font-outfit text-gray-600">📞 {selectedAddress.phoneNumber}</Text>
                 <Text className="text-blue-500 mt-2 font-outfit">Change or select another address →</Text>
               </TouchableOpacity>

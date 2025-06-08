@@ -16,6 +16,7 @@ interface CartState {
   removeSellerItems: (sellerId: string) => Promise<void>
   clearCartError: () => void
   organizeItemsBySeller: (cart: Cart) => SellerItems[]
+  isTemporaryId: (id: string) => boolean
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -25,6 +26,11 @@ export const useCartStore = create<CartState>((set, get) => ({
   error: null,
   
   clearCartError: () => set({ error: null }),
+  
+  // Helper function to check if an ID is temporary
+  isTemporaryId: (id: string): boolean => {
+    return id.startsWith('temp-');
+  },
   
   organizeItemsBySeller: (cart: Cart): SellerItems[] => {
     if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
@@ -216,7 +222,17 @@ export const useCartStore = create<CartState>((set, get) => ({
     } finally {
       set({ isLoading: false });
       try {
-        await addToCart(productId, size, quantity);
+        // Call API to add item to cart and get real cart with real IDs
+        const updatedCartFromApi = await addToCart(productId, size, quantity);
+        
+        // Update cart state with the real IDs from the API
+        if (updatedCartFromApi) {
+          const updatedItemsBySeller = get().organizeItemsBySeller(updatedCartFromApi);
+          set({ 
+            cart: updatedCartFromApi,
+            itemsBySeller: updatedItemsBySeller
+          });
+        }
       } catch (error) {
         set({ 
           cart: originalCart,
@@ -230,6 +246,13 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   
   updateQuantity: async (cartItemId: string, quantity: number) => {
+    // If the ID is temporary, refresh the cart first to get the real IDs
+    if (get().isTemporaryId(cartItemId)) {
+      await get().refreshCart();
+      set({ error: 'Please try again, cart was not fully synced', isLoading: false });
+      return;
+    }
+
     const originalCart = get().cart;
     const originalItemsBySeller = get().itemsBySeller;
     
@@ -308,6 +331,13 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   
   removeItem: async (cartItemId: string) => {
+    // If the ID is temporary, refresh the cart first to get the real IDs
+    if (get().isTemporaryId(cartItemId)) {
+      await get().refreshCart();
+      set({ error: 'Please try again, cart was not fully synced', isLoading: false });
+      return;
+    }
+
     const originalCart = get().cart;
     const originalItemsBySeller = get().itemsBySeller;
     

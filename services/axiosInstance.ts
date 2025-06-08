@@ -8,14 +8,9 @@ const getBaseUrl = () => {
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:3300';
   }
-  // For iOS simulator, localhost works as expected
   else if (Platform.OS === 'ios') {
     return 'http://localhost:3300';
   }
-  // For actual physical devices, you would need to use your computer's local IP address
-  // For example: return 'http://192.168.1.100:3300';
-  
-  // Default fallback
   return 'http://localhost:3300';
 };
 

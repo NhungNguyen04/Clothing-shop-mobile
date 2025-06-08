@@ -173,55 +173,65 @@ export default function SellerRegisterPage() {
   };
   
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+  if (!validateForm()) return;
+  
+  if (!user?.id) {
+    Alert.alert('Error', 'You must be logged in to register as a seller');
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
     
-    if (!user?.id) {
-      Alert.alert('Error', 'You must be logged in to register as a seller');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      const sellerData = {
-        userId: user.id,
-        email: formData.email,
-        managerName: formData.managerName,
-        status: 'PENDING' as const,
-        addressInfo: {
-          address: formData.address,
-          phoneNumber: formData.phoneNumber,
-          postalCode: formData.postalCode,
-          street: formData.street,
-          ward: formData.ward,
-          district: formData.district,
-          province: formData.province,
-        }
-      };
-
-      const response = await createSeller(sellerData);
-      
-      if (response.success && response.data?.seller) {
-        // Update global state with seller info
-        setSeller(response.data.seller);
-        
-        // Show success message
-        Alert.alert(
-          'Application Submitted',
-          'Your seller application has been submitted and is pending review.',
-          [{ text: 'OK', onPress: () => router.push('/(authenticated)/(customer)/(tabs)/profile') }]
-        );
-      } else {
-        throw new Error(response.message || 'Failed to register as seller');
+    const sellerData = {
+      userId: user.id,
+      email: formData.email,
+      managerName: formData.managerName,
+      status: 'PENDING' as const,
+      addressInfo: {
+        address: formData.address,
+        phoneNumber: formData.phoneNumber,
+        postalCode: formData.postalCode,
+        street: formData.street,
+        ward: formData.ward,
+        district: formData.district,
+        province: formData.province,
       }
-    } catch (error) {
-      console.error('Error submitting seller application:', error);
-      Alert.alert('Registration Error', 
-        error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
+    };
+
+    const response = await createSeller(sellerData);
+    
+    // Handle the different response structures
+    let sellerData2;
+    if (response.seller) {
+      // Direct seller property in response
+      sellerData2 = response.seller;
+    } else if (response.data && response.data.seller) {
+      // Seller in data property
+      sellerData2 = response.data.seller;
     }
-  };
+    
+    if (sellerData2) {
+      // Update global state with seller info
+      setSeller(sellerData2);
+      
+      // Show success message
+      Alert.alert(
+        'Application Submitted',
+        'Your seller application has been submitted and is pending review.',
+        [{ text: 'OK', onPress: () => router.push('/(authenticated)/(customer)/(tabs)/profile') }]
+      );
+    } else {
+      throw new Error('Failed to register as seller');
+    }
+  } catch (error) {
+    console.error('Error submitting seller application:', error);
+    Alert.alert('Registration Error', 
+      error instanceof Error ? error.message : 'An unexpected error occurred');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Check user role and seller status
   useEffect(() => {
@@ -242,8 +252,8 @@ export default function SellerRegisterPage() {
             const response = await getSellerByUserId(user.id);
             
             // Fix: Handle different response structures
-            if (response && response.success && response.data && response.data.seller) {
-              const sellerData = response.data.seller;
+            if (response.seller) {
+              const sellerData = response.seller;
               setSeller(sellerData);
               
               if (sellerData.status === 'APPROVED') {
