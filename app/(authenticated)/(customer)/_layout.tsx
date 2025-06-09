@@ -69,15 +69,10 @@ function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
       </View>
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
-          onPress={() => {router.navigate("/chat")}} 
+          onPress={() => {router.navigate("/(authenticated)/(customer)/chat")}} 
           style={styles.iconButton}
         >
           <IconSymbol size={24} name="message" color={Colors[colorScheme].tabIconSelected} />
-          {totalItems > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>
-            </View>
-          )}
         </TouchableOpacity>
       </View>
     </View>

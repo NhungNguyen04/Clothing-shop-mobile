@@ -31,6 +31,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   onProductPress
 }) => {
   const { getProductMainImage } = useProductStore();
+  console.log('Rendering ProductGrid with products:', products);
   const renderItem = ({ item }: { item: Product }) => (
     <View style={styles.itemContainer}>
       <ProductItem

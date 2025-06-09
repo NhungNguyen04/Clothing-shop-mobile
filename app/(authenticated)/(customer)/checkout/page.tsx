@@ -71,7 +71,18 @@ const CheckoutScreen = () => {
     }
   }, [selectedAddress, useSavedAddress]);
 
-  if (!cart || !itemsBySeller || itemsBySeller.length === 0) {
+  // Early return if cart or itemsBySeller is undefined
+  if (!cart || !itemsBySeller) {
+    return (
+      <View className="flex-1 justify-center items-center p-5">
+        <Text className="text-lg mb-5 font-outfit">Loading cart information...</Text>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  // Now we can safely check if the cart is empty
+  if (!cart.cartItems || cart.cartItems.length === 0 || itemsBySeller.length === 0) {
     return (
       <View className="flex-1 justify-center items-center p-5">
         <Text className="text-lg mb-5 font-outfit">Your cart is empty</Text>
@@ -190,7 +201,10 @@ const CheckoutScreen = () => {
     return addressParts.join(', ');
   };
 
-  const totalItems = cart.cartItems.reduce((total, item) => total + item.quantity, 0);
+  // Add defensive check for totalItems calculation
+  const totalItems = cart && cart.cartItems 
+    ? cart.cartItems.reduce((total, item) => total + item.quantity, 0) 
+    : 0;
 
   // Render the saved address selector
   const renderAddressSelector = () => {
