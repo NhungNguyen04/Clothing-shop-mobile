@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, Image, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/store/AuthStore';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { user, logout, token } = useAuth();
+  const { user, seller } = useAuthStore();
+  const { logout} = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,18 +43,24 @@ export default function ProfileScreen() {
         <View className="bg-white p-6 items-center shadow-sm mb-4">
           <View className="w-24 h-24 rounded-full bg-gray-200 mb-4 overflow-hidden">
             <Image 
-              source={{ uri: 'https://ui-avatars.com/api/?name=' + encodeURI(user.name) + '&background=random' }} 
+              source={
+                seller?.image
+                  ? { uri: seller.image }
+                  : { uri: 'https://randomuser.me/api/portraits/thumb/women/44.jpg' }
+              }
               className="w-full h-full"
             />
           </View>
-          <Text className="text-2xl font-bold text-gray-800">{user.name}</Text>
-          <Text className="text-gray-500">{user.email}</Text>
+          <Text className="text-2xl font-bold text-gray-800">{seller?.managerName}</Text>
+          <Text className="text-gray-500">{seller?.email}</Text>
         </View>
 
         <View className="bg-white p-6 mb-4">
           <Text className="text-lg font-bold text-gray-800 mb-4">Settings</Text>
           
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
+          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100"
+            onPress={() => router.navigate('/(authenticated)/seller/account')}
+          >
             <View className="w-8 h-8 rounded-full bg-yellow-100 items-center justify-center mr-3">
               <Text className="text-yellow-500 font-bold">⚙️</Text>
             </View>
@@ -60,13 +68,6 @@ export default function ProfileScreen() {
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity className="flex-row items-center py-4">
-            <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
-              <Text className="text-red-500 font-bold">🔔</Text>
-            </View>
-            <Text className="flex-1 text-gray-700">Notifications</Text>
-            <Text className="text-gray-400">→</Text>
-          </TouchableOpacity>
            <TouchableOpacity className="flex-row items-center py-4"
             onPress={() => router.navigate('/(authenticated)/(customer)/(tabs)')}
           >

@@ -20,6 +20,12 @@ import { Star, ChevronLeft } from "react-native-feather";
 import { useProductStore } from "@/store/ProductStore";
 import { useCartStore } from "@/store/CartStore";
 import { ReviewSection } from "@/components/ReviewSection";
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { Star, ChevronLeft, MessageCircle } from 'react-native-feather';
+import { useProductStore } from '@/store/ProductStore';
+import { useCartStore } from '@/store/CartStore';
+import { useAuthStore } from '@/store/AuthStore';
+import { createConversation } from '@/services/chat'; // Add this import
 
 type ProductDetailParams = {
   ProductDetail: {
@@ -38,6 +44,11 @@ export default function ProductDetailScreen() {
   const {
     addToCart,
     isLoading: cartIsLoading,
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const {
+    addToCart, 
+    isLoading: cartIsLoading, 
     error: cartError,
     clearCartError,
   } = useCartStore();
@@ -55,8 +66,9 @@ export default function ProductDetailScreen() {
     fetchProductById,
     formatPrice,
   } = useProductStore();
-
-  const scrollViewRef = useRef<ScrollView>(null);
+  const { user } = useAuthStore();
+  const seller = product?.seller; // Assuming product has a seller field
+    const scrollViewRef = useRef<ScrollView>(null);
 
   // Load product data
   useEffect(() => {
@@ -141,6 +153,24 @@ export default function ProductDetailScreen() {
     }
   }, [id, selectedSize, quantity, addToCart]);
 
+  const handleChatWithSeller = useCallback(async () => {
+    if (!user || !seller) {
+      Alert.alert('Authentication Required', 'You need to be logged in to chat with the seller');
+      return;
+    }
+      
+    try {
+      // Create or get a conversation between the current user and the seller
+      const conversation = await createConversation(user.id, seller.id);
+      
+      // Navigate to the chat screen with the conversation ID
+      router.push(`/(authenticated)/(customer)/chat/${conversation.id}` as any);
+    } catch (error) {
+      console.error('Error starting chat with seller:', error);
+      Alert.alert('Error', 'Unable to start chat with seller. Please try again later.');
+    }
+  }, [user, seller, router]);
+
   const renderStars = useCallback((rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -221,6 +251,11 @@ export default function ProductDetailScreen() {
           <Text className="text-pink-500 text-lg font-outfit-medium">
             Go Back
           </Text>
+        <TouchableOpacity 
+          className="p-2"
+          onPress={() => router.back()}
+        >
+          <Text className="text-pink-500 text-lg font-outfit-medium">Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -233,6 +268,10 @@ export default function ProductDetailScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between border-b border-gray-200 px-2">
         <TouchableOpacity className="p-2" onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          className="p-2"
+          onPress={() => router.back()}
+        >
           <ChevronLeft width={24} height={24} color="#000" />
         </TouchableOpacity>
       </View>
@@ -288,18 +327,28 @@ export default function ProductDetailScreen() {
                 ({product.ratings || 0})
               </Text>
             </View>
-
-            <View className="flex-row items-center">
-              <Image
-                source={{
-                  uri: "https://randomuser.me/api/portraits/thumb/women/44.jpg",
-                }}
-                className="w-6 h-6 rounded-full mr-2"
+            
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => router.push(`/(authenticated)/(customer)/seller/${product.seller.id}` as any)}
+            >
+              <Image 
+                source={
+                  seller?.image
+                    ? { uri: seller.image }
+                    : { uri: 'https://randomuser.me/api/portraits/thumb/women/44.jpg' }
+                }
+                style={{ width: 30, height: 30, borderRadius: 15, marginRight: 8 }}
               />
-              <Text className="font-outfit text-sm font-medium text-gray-800">
-                {product.seller.managerName}
-              </Text>
-            </View>
+              <Text className="font-outfit-medium text-gray-800 underline">{product.seller.managerName}</Text>
+              <TouchableOpacity 
+                className="flex-row items-center ml-4 bg-pink-500 py-2 px-2 rounded-md my-2 self-start"
+                onPress={handleChatWithSeller}
+              >
+                <MessageCircle width={18} height={18} color="#ffffff" />
+                <Text className="font-outfit text-white ml-2">Chat</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           </View>
 
           {/* Price */}

@@ -24,6 +24,7 @@ export interface Seller {
   status: string | null;
   createdAt: string;
   updatedAt: string;
+  image: string | null;
 }
 
 export interface Product {

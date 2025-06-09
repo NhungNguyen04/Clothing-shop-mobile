@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { Product } from './product';
 import { User, Address } from './user';
 
 // Define schema types locally since they're from backend
@@ -46,7 +47,8 @@ export interface Seller {
   updatedAt: string;
   address?: Address;
   user?: User;
-  products?: any[];
+  products?: Product[];
+  image?: string; // Optional image field
 }
 
 // Create a new seller

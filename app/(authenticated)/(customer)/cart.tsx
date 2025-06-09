@@ -32,7 +32,7 @@ export default function CartScreen() {
 
   // Initialize selected items when cart changes
   useEffect(() => {
-    if (cart?.cartItems) {
+    if (cart && cart.cartItems) {
       const initialSelectedItems: Record<string, boolean> = {}
       const initialSelectedSellers: Record<string, boolean> = {}
 
@@ -141,7 +141,7 @@ export default function CartScreen() {
   }, [removeSellerItems])
 
   const calculateSelectedTotal = useCallback(() => {
-    if (!cart) return 0
+    if (!cart || !cart.cartItems) return 0
 
     return cart.cartItems
       .filter((item) => selectedItems[item.id])
@@ -175,7 +175,7 @@ export default function CartScreen() {
     )
   }
 
-  if (!cart || cart.cartItems.length === 0) {
+  if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center p-5 bg-gray-100">
         <Text className="text-xl font-bold mb-2">Your cart is empty</Text>
