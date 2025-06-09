@@ -7,24 +7,27 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { useProductStore } from '@/store/ProductStore';
 import { useCartStore } from '@/store/CartStore';
+import { useNotificationStore } from '@/store/NotificationStore';
 
 // Separate TopNavigation component
 function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
   const { cart, refreshCart, error } = useCartStore();
   const { fetchProducts, fetchRecentProducts } = useProductStore();
+  const { unreadCount, fetchNotificationCount } = useNotificationStore();
   
   // Calculate total items in cart
   const totalItems = cart?.cartItems?.reduce((total, item) => total + item.quantity, 0) || 0;
   
-  // Refresh cart when component mounts
+  // Refresh data when component mounts
   useEffect(() => {
     const fetchData = async () => {
       await refreshCart(); // Refresh cart data
       await fetchProducts(); // Fetch all products
       await fetchRecentProducts(); // Fetch recent products
+      await fetchNotificationCount(); // Fetch notification count
     };
     fetchData();
-  }, [refreshCart, fetchProducts, fetchRecentProducts]);
+  }, [refreshCart, fetchProducts, fetchRecentProducts, fetchNotificationCount]);
 
   // If there's an error with the cart, we can still render the navigation
   // The error will be handled in the specific screens
@@ -47,9 +50,9 @@ function TopNavigation({ colorScheme = 'light' as 'light' | 'dark' }) {
           style={styles.iconButton}
         >
           <IconSymbol size={24} name="bell" color={Colors[colorScheme].tabIconSelected} />
-          {totalItems > 0 && (
+          {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>
+              <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>

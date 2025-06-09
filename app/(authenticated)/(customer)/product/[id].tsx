@@ -16,9 +16,6 @@ import {
   Platform,
 } from "react-native";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
-import { Star, ChevronLeft } from "react-native-feather";
-import { useProductStore } from "@/store/ProductStore";
-import { useCartStore } from "@/store/CartStore";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Star, ChevronLeft, MessageCircle } from 'react-native-feather';
@@ -40,10 +37,6 @@ const MAIN_IMAGE_HEIGHT = width;
 export default function ProductDetailScreen() {
   const route = useRoute<RouteProp<ProductDetailParams, "ProductDetail">>();
   const navigation = useNavigation();
-  const { id } = route.params;
-  const {
-    addToCart,
-    isLoading: cartIsLoading,
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const {
@@ -247,17 +240,13 @@ export default function ProductDetailScreen() {
         <Text className="font-outfit text-lg text-pink-500 text-center mb-5">
           {productError || "Product not found"}
         </Text>
-        <TouchableOpacity className="p-2" onPress={() => navigation.goBack()}>
-          <Text className="text-pink-500 text-lg font-outfit-medium">
-            Go Back
-          </Text>
         <TouchableOpacity 
           className="p-2"
           onPress={() => router.back()}
         >
           <Text className="text-pink-500 text-lg font-outfit-medium">Go Back</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+        </SafeAreaView>
     );
   }
 
@@ -273,6 +262,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.back()}
         >
           <ChevronLeft width={24} height={24} color="#000" />
+          </TouchableOpacity>
         </TouchableOpacity>
       </View>
 
@@ -320,11 +310,11 @@ export default function ProductDetailScreen() {
 
             <View className="flex-row items-center mb-3">
               <View className="flex-row mr-1">
-                {renderStars(product.ratings || 4)}{" "}
+                {renderStars(product.averageRating || 4)}{" "}
                 {/* Use product rating if available */}
               </View>
               <Text className="font-outfit text-sm text-gray-600">
-                ({product.ratings || 0})
+                ({product.reviews || 0})
               </Text>
             </View>
             
@@ -503,7 +493,9 @@ export default function ProductDetailScreen() {
             </Text>
           </View>
         </View>
+        <View className="px-4 py-2 border-t border-gray-200">
         <ReviewSection productId={id} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

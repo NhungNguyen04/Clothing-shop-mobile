@@ -37,7 +37,8 @@ export interface Product {
   category: string;
   subCategory: string;
   sellerId: string;
-  ratings: any | null;
+  reviews: number;
+  averageRating: number;
   createdAt: string;
   updatedAt: string;
   seller: Seller;

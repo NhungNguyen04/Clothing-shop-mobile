@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Product } from '@/services/product';
 import { deleteProduct } from '@/services/seller/product';
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 type ProductItemProps = {
   product: Product;
@@ -55,24 +56,56 @@ const ProductItem = ({ product, onRefresh }: ProductItemProps) => {
 
   const stockStatus = getStockStatus();
 
+  // Generate star rating display
+  const renderStarRating = () => {
+    const stars = [];
+    const roundedRating = Math.round(product.averageRating * 2) / 2; // Round to nearest 0.5
+    
+    for (let i = 1; i <= 5; i++) {
+      if (i <= roundedRating) {
+        // Full star
+        stars.push(<Ionicons key={i} name="star" size={12} color="#ec4899" />);
+      } else if (i - 0.5 === roundedRating) {
+        // Half star
+        stars.push(<Ionicons key={i} name="star-half" size={12} color="#ec4899" />);
+      } else {
+        // Empty star
+        stars.push(<Ionicons key={i} name="star-outline" size={12} color="#ec4899" />);
+      }
+    }
+    
+    return stars;
+  };
+
   return (
     <View style={styles.container}>
-      <Image 
-        source={{ uri: product.image[0] || 'https://via.placeholder.com/150' }} 
-        style={styles.image} 
-        resizeMode="cover"
-      />
-      <View style={styles.infoContainer}>
-        <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
-        <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-        <Text style={[styles.stock, { color: stockStatus.color }]}>
-          {stockStatus.text}
-        </Text>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.category}>{product.category}</Text>
-          <Text style={styles.subCategory}>{product.subCategory}</Text>
+      <TouchableOpacity
+        style={styles.contentContainer}
+        onPress={() => router.push(`/seller/product/${product.id}`)}
+      >
+        <Image 
+          source={{ uri: product.image[0] }} 
+          style={styles.image}
+          resizeMode="cover"
+        />
+        
+        <View style={styles.infoContainer}>
+          <Text style={styles.title} numberOfLines={2}>{product.name}</Text>
+          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          <Text style={styles.stock}>Stock: {product.stockQuantity}</Text>
+          
+          {/* Rating and reviews section */}
+          <View style={styles.ratingContainer}>
+            <View style={styles.starContainer}>
+              {renderStarRating()}
+            </View>
+            <Text style={styles.reviewsText}>
+              ({product.reviews})
+            </Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
+      
       <View style={styles.actions}>
         <TouchableOpacity onPress={handleEdit} style={styles.actionButton}>
           <Feather name="edit" size={18} color="#3B82F6" />
@@ -98,6 +131,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 3,
   },
+  contentContainer: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+  },
   image: {
     width: 80,
     height: 80,
@@ -108,7 +146,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     justifyContent: 'center',
   },
-  name: {
+  title: {
     fontSize: 16,
     fontWeight: '600',
   },
@@ -151,6 +189,20 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewsText: {
+    fontSize: 12,
+    color: '#ec4899', // pink-500 color
+    marginLeft: 4,
   },
 });
 

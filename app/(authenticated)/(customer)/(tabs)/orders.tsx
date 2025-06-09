@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import OrderCard from '@/components/OrderCard';
 import { ChevronLeft } from 'react-native-feather';
 
-const STATUS_TABS: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+const STATUS_TABS: OrderStatus[] = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 const OrdersScreen: React.FC = () => {
   const { orders, fetchUserOrders, isLoading, error, cancelOrder } = useOrderStore();

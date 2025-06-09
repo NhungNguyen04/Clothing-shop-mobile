@@ -15,6 +15,10 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { useUserStore } from "@/store/UserStore";
 import { useAuth } from "@/context/AuthContext";
+import axiosInstance from "@/services/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { ChevronLeft } from "react-native-feather";
 
 export default function UpdateProfile() {
   const { setUser, user } = useAuth();
@@ -29,6 +33,7 @@ export default function UpdateProfile() {
   const [email, setEmail] = useState("");
 
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Prefill ONCE
   useEffect(() => {
@@ -48,6 +53,54 @@ export default function UpdateProfile() {
     );
   }, [currentUser]);
 
+  const uploadImage = async (uri: string) => {
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      const fileExtension = uri.split(".").pop() || "jpg";
+
+      // @ts-ignore - TypeScript doesn't recognize append with this format
+      formData.append("file", {
+        uri,
+        name: `avatar-${Date.now()}.${fileExtension}`,
+        type: `image/${fileExtension}`,
+      });
+
+      const uploadResponse = await axiosInstance.post("/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("Upload response:", JSON.stringify(uploadResponse.data));
+
+      // Check for successful response
+      if (uploadResponse.data?.success === true) {
+        // The API returns the URL directly in the data field
+        const imageUrl = uploadResponse.data.data;
+
+        if (typeof imageUrl === "string") {
+          // Update avatar
+          setAvatar(imageUrl);
+          return imageUrl;
+        } else {
+          throw new Error("Invalid image URL format in response");
+        }
+      } else {
+        throw new Error(
+          "Upload failed: " + (uploadResponse.data?.message || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      Alert.alert("Error", "Failed to upload profile image");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -61,7 +114,10 @@ export default function UpdateProfile() {
       aspect: [1, 1],
     });
     if (!res.canceled && res.assets.length > 0) {
-      setAvatar(res.assets[0].uri);
+      const uploadedImageUrl = await uploadImage(res.assets[0].uri);
+      if (uploadedImageUrl) {
+        setAvatar(uploadedImageUrl);
+      }
     }
   };
 
@@ -75,7 +131,6 @@ export default function UpdateProfile() {
       {
         name,
         email,
-
         image: avatar || undefined,
       },
       setUser,
@@ -97,16 +152,41 @@ export default function UpdateProfile() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+       <View className="flex-row items-center w-full mb-4">
+                <TouchableOpacity onPress={() => router.back()}>
+                  <ChevronLeft width={22} height={22} color="#555" />
+                </TouchableOpacity>
+                <Text className="text-xl font-outfit-bold">Customer Profile</Text>
+                </View>
       {/* Avatar picker */}
-      <TouchableOpacity style={styles.avatarContainer} onPress={pickAvatar}>
-        {avatar ? (
-          <Image source={{ uri: avatar }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>+</Text>
+      <TouchableOpacity
+        style={styles.avatarContainer}
+        onPress={pickAvatar}
+        disabled={uploading}
+      >
+        <View style={styles.avatarWrapper}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>+</Text>
+            </View>
+          )}
+
+          {/* Camera icon overlay */}
+          <View style={styles.cameraIconContainer}>
+            <Ionicons name="camera" size={20} color="white" />
+          </View>
+        </View>
+
+        {uploading && (
+          <View style={styles.uploadingOverlay}>
+            <ActivityIndicator size="small" color="#fff" />
           </View>
         )}
       </TouchableOpacity>
+
+      {uploading && <Text style={styles.uploadingText}>Uploading image...</Text>}
 
       {/* Form fields */}
       <Field label="Tên" value={name} onChange={setName} />
@@ -117,8 +197,14 @@ export default function UpdateProfile() {
         keyboard="email-address"
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSave}>
-        <Text style={styles.buttonText}>Lưu thay đổi</Text>
+      <TouchableOpacity
+        style={[styles.button, uploading ? styles.disabledButton : null]}
+        onPress={handleSave}
+        disabled={uploading}
+      >
+        <Text style={styles.buttonText}>
+          {uploading ? "Đang tải lên..." : "Lưu thay đổi"}
+        </Text>
       </TouchableOpacity>
       {!!error && <Text style={styles.error}>{error}</Text>}
     </ScrollView>
@@ -150,6 +236,11 @@ const Field = ({
 const styles = StyleSheet.create({
   container: { padding: 16, backgroundColor: "#fff", paddingBottom: 40 },
   avatarContainer: { alignSelf: "center", marginBottom: 16 },
+  avatarWrapper: {
+    position: "relative",
+    width: 100,
+    height: 100,
+  },
   avatar: { width: 100, height: 100, borderRadius: 50 },
   avatarPlaceholder: {
     width: 100,
@@ -177,4 +268,36 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "500" },
   error: { color: "red", marginTop: 12, textAlign: "center" },
+  cameraIconContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#ec4899",
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "white",
+  },
+  uploadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  uploadingText: {
+    textAlign: "center",
+    marginBottom: 10,
+    color: "#666",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
+  },
 });

@@ -1,4 +1,4 @@
-import { User } from './authentication';
+import { User } from './user';
 import axiosInstance from './axiosInstance';
 import { Seller, SizeStock } from './product';
 

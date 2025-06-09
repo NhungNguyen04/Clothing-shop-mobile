@@ -270,7 +270,7 @@ export default function SellerDetailScreen() {
           </View>
         </View>
         
-        {/* Search and Filter Component with reset key */}
+        {/* Search and Filter Component with reset key and enhanced functionality */}
         <SearchAndFilter 
           products={products}
           onProductsFiltered={handleProductsFiltered}

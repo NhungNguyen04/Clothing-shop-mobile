@@ -78,15 +78,6 @@ export default function ProfileScreen() {
             <Text className="flex-1 text-gray-700">My Orders</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
-            <View className="w-8 h-8 rounded-full bg-green-100 items-center justify-center mr-3">
-              <Text className="text-green-500 font-bold">💖</Text>
-            </View>
-            <Text className="flex-1 text-gray-700">Wishlist</Text>
-            <Text className="text-gray-400">→</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             className="flex-row items-center py-4"
             onPress={() =>
@@ -117,7 +108,8 @@ export default function ProfileScreen() {
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center py-4">
+          <TouchableOpacity className="flex-row items-center py-4"
+            onPress={() => router.push("/(authenticated)/(customer)/notifications")}>
             <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
               <Text className="text-red-500 font-bold">🔔</Text>
             </View>

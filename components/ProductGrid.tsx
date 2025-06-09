@@ -39,6 +39,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         title={item.name}
         price={item.price}
         onPress={() => onProductPress(item)}
+        reviewsCount={item.reviews}
+        rating={item.averageRating}
       />
     </View>
   );

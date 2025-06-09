@@ -24,11 +24,13 @@ interface CategoryOption {
   checked: boolean;
 }
 
-// Sort options
+// Expanded sort options with ratings
 const SORT_OPTIONS: string[] = [
   'Price: Low To High',
   'Price: High To Low',
   'Newest First',
+  'Top Rated', // New option for sorting by rating
+  'Most Reviewed', // New option for sorting by review count
 ];
 
 // Category options
@@ -45,6 +47,13 @@ const TYPES: CategoryOption[] = [
   { name: 'Winterwear', checked: false },
 ];
 
+// Rating filter options
+const RATINGS: CategoryOption[] = [
+  { name: '4★ & above', checked: false },
+  { name: '3★ & above', checked: false },
+  { name: '2★ & above', checked: false },
+];
+
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.7;
 
@@ -58,6 +67,7 @@ const ProductListingScreen: React.FC = () => {
   const [showSortOptions, setShowSortOptions] = useState<boolean>(false);
   const [categories, setCategories] = useState<CategoryOption[]>(CATEGORIES);
   const [types, setTypes] = useState<CategoryOption[]>(TYPES);
+  const [ratings, setRatings] = useState<CategoryOption[]>(RATINGS);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
   // Animation for the drawer
@@ -89,7 +99,7 @@ const ProductListingScreen: React.FC = () => {
   // Apply filters and search whenever dependencies change
   useEffect(() => {
     applyFiltersAndSearch();
-  }, [searchQuery, selectedSort, categories, types, products]);
+  }, [searchQuery, selectedSort, categories, types, ratings, products]);
 
   const applyFiltersAndSearch = () => {
     console.log('categories', categories);
@@ -124,6 +134,23 @@ const ProductListingScreen: React.FC = () => {
       );
     }
     
+    // Apply rating filters
+    const selectedRatings = ratings.filter(r => r.checked);
+    if (selectedRatings.length > 0) {
+      // Get the lowest selected rating threshold
+      let lowestRating = 5;
+      selectedRatings.forEach(rating => {
+        const ratingValue = parseInt(rating.name.charAt(0));
+        if (ratingValue < lowestRating) {
+          lowestRating = ratingValue;
+        }
+      });
+      
+      result = result.filter(item => 
+        (item.averageRating || 0) >= lowestRating
+      );
+    }
+    
     // Apply sorting
     result = sortProducts(result, selectedSort);
     
@@ -144,6 +171,10 @@ const ProductListingScreen: React.FC = () => {
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
         });
+      case 'Top Rated':
+        return sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+      case 'Most Reviewed':
+        return sorted.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
       default:
         return sorted;
     }
@@ -196,9 +227,16 @@ const ProductListingScreen: React.FC = () => {
     setTypes(updatedTypes);
   };
 
+  const toggleRating = (index: number): void => {
+    const updatedRatings = [...ratings];
+    updatedRatings[index].checked = !updatedRatings[index].checked;
+    setRatings(updatedRatings);
+  };
+
   const clearAllFilters = (): void => {
     setCategories(CATEGORIES.map(cat => ({ ...cat, checked: false })));
     setTypes(TYPES.map(type => ({ ...type, checked: false })));
+    setRatings(RATINGS.map(rating => ({ ...rating, checked: false })));
     setSearchQuery('');
     setSelectedSort(SORT_OPTIONS[0]);
   };
@@ -322,6 +360,25 @@ const ProductListingScreen: React.FC = () => {
                   )}
                 </View>
                 <Text className="text-sm">{type.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* New Rating Filter Section */}
+          <View className="p-4 border-b border-gray-200">
+            <Text className="text-base font-semibold mb-3">CUSTOMER RATINGS</Text>
+            {ratings.map((rating, index) => (
+              <TouchableOpacity 
+                key={index} 
+                className="flex-row items-center mb-3"
+                onPress={() => toggleRating(index)}
+              >
+                <View className={`w-5 h-5 border rounded mr-2 justify-center items-center ${rating.checked ? 'bg-black border-black' : 'border-gray-300'}`}>
+                  {rating.checked && (
+                    <Ionicons name="checkmark" size={16} color="#fff" />
+                  )}
+                </View>
+                <Text className="text-sm">{rating.name}</Text>
               </TouchableOpacity>
             ))}
           </View>

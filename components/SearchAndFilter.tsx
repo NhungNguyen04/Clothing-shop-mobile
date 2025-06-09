@@ -6,7 +6,9 @@ import {
   TextInput,
   Animated,
   Dimensions,
-  ScrollView
+  ScrollView,
+  Modal,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/services/product';
@@ -20,21 +22,17 @@ interface CategoryOption {
 interface SearchAndFilterProps {
   products: Product[];
   onProductsFiltered: (filteredProducts: Product[]) => void;
-  sortOptions?: string[];
-  categories?: CategoryOption[];
-  types?: CategoryOption[];
   title?: string;
-  showTitle?: boolean;
   resetKey?: string | number; // Add a key prop to reset the component state
 }
 
-const { width } = Dimensions.get('window');
-const DRAWER_WIDTH = width * 0.7;
-
-const DEFAULT_SORT_OPTIONS: string[] = [
-  'Price: Low To High',
-  'Price: High To Low',
-  'Newest First',
+// Sort options including our new rating options
+const sortOptions = [
+  { id: 'price-asc', label: 'Price: Low to High' },
+  { id: 'price-desc', label: 'Price: High to Low' },
+  { id: 'newest', label: 'Newest First' },
+  { id: 'rating', label: 'Top Rated' },
+  { id: 'reviews', label: 'Most Reviewed' },
 ];
 
 const DEFAULT_CATEGORIES: CategoryOption[] = [
@@ -49,21 +47,27 @@ const DEFAULT_TYPES: CategoryOption[] = [
   { name: 'Winterwear', checked: false },
 ];
 
+const { width } = Dimensions.get('window');
+const DRAWER_WIDTH = width * 0.7;
+
+const defaultRatingFilters: CategoryOption[] = [
+  { name: '4★ & above', checked: false },
+  { name: '3★ & above', checked: false },
+  { name: '2★ & above', checked: false },
+];
+
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   products,
   onProductsFiltered,
-  sortOptions = DEFAULT_SORT_OPTIONS,
-  categories = DEFAULT_CATEGORIES,
-  types = DEFAULT_TYPES,
   title = "PRODUCTS",
-  showTitle = true,
   resetKey = "0"
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedSort, setSelectedSort] = useState<string>(sortOptions[0]);
+  const [selectedSort, setSelectedSort] = useState<string>(sortOptions[0].label);
   const [showSortOptions, setShowSortOptions] = useState<boolean>(false);
-  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>(categories);
-  const [typeOptions, setTypeOptions] = useState<CategoryOption[]>(types);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>(DEFAULT_CATEGORIES);
+  const [typeOptions, setTypeOptions] = useState<CategoryOption[]>(DEFAULT_TYPES);
+  const [ratingFilters, setRatingFilters] = useState<CategoryOption[]>(defaultRatingFilters);
   
   // Animation for the drawer
   const drawerAnimation = useRef(new Animated.Value(DRAWER_WIDTH)).current;
@@ -77,7 +81,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   // Apply filters and search whenever dependencies change
   useEffect(() => {
     applyFiltersAndSearch();
-  }, [searchQuery, selectedSort, categoryOptions, typeOptions, products]);
+  }, [searchQuery, selectedSort, categoryOptions, typeOptions, products, ratingFilters]);
   
   const applyFiltersAndSearch = () => {
     let result = [...products];
@@ -111,6 +115,23 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       );
     }
     
+    // Apply rating filters
+    const selectedRatings = ratingFilters.filter(r => r.checked);
+    if (selectedRatings.length > 0) {
+      // Get the lowest selected rating
+      let lowestRating = 5;
+      selectedRatings.forEach(rating => {
+        const ratingValue = parseInt(rating.name.charAt(0));
+        if (ratingValue < lowestRating) {
+          lowestRating = ratingValue;
+        }
+      });
+      
+      result = result.filter(product => 
+        (product.averageRating || 0) >= lowestRating
+      );
+    }
+    
     // Apply sorting
     result = sortProducts(result, selectedSort);
     
@@ -132,6 +153,10 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
         });
+      case 'Top Rated':
+        return sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+      case 'Most Reviewed':
+        return sorted.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
       default:
         return sorted;
     }
@@ -172,16 +197,23 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     setTypeOptions(updated);
   };
   
+  const toggleRatingFilter = (index: number): void => {
+    const updated = [...ratingFilters];
+    updated[index].checked = !updated[index].checked;
+    setRatingFilters(updated);
+  };
+  
   const clearAllFilters = (): void => {
     resetFilters();
   };
   
   // New method to reset all filters
   const resetFilters = useCallback(() => {
-    setCategoryOptions(categories.map(cat => ({ ...cat, checked: false })));
-    setTypeOptions(types.map(type => ({ ...type, checked: false })));
+    setCategoryOptions(DEFAULT_CATEGORIES.map(cat => ({ ...cat, checked: false })));
+    setTypeOptions(DEFAULT_TYPES.map(type => ({ ...type, checked: false })));
+    setRatingFilters(defaultRatingFilters.map(filter => ({ ...filter, checked: false })));
     setSearchQuery('');
-    setSelectedSort(sortOptions[0]);
+    setSelectedSort(sortOptions[0].label);
     setShowSortOptions(false);
     
     if (drawerOpen) {
@@ -192,7 +224,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       }).start();
       setDrawerOpen(false);
     }
-  }, [categories, types, sortOptions]);
+  }, [drawerOpen]);
   
   return (
     <>
@@ -238,12 +270,12 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 key={index} 
                 className="px-3 py-2.5 border-b border-gray-100"
                 onPress={() => {
-                  setSelectedSort(option);
+                  setSelectedSort(option.label);
                   setShowSortOptions(false);
                 }}
               >
-                <Text className={`text-sm ${selectedSort === option ? 'font-bold' : ''}`}>
-                  {option}
+                <Text className={`text-sm ${selectedSort === option.label ? 'font-bold' : ''}`}>
+                  {option.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -252,7 +284,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       </View>
 
       {/* Optional Title */}
-      {showTitle && (
+      {title && (
         <View className="flex-row items-center mt-3 mb-2 ml-4">
           <Text className="font-outfit-medium ml-2">{title}</Text>
           <View className="w-[100px] h-[1px] bg-gray-400 mt-2.5 ml-2" />
@@ -309,6 +341,25 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Rating Filters - New Section */}
+          <View className="p-4 border-b border-gray-200">
+            <Text className="text-base font-semibold mb-3">CUSTOMER RATINGS</Text>
+            {ratingFilters.map((filter, index) => (
+              <TouchableOpacity
+                key={index}
+                className="flex-row items-center mb-3"
+                onPress={() => toggleRatingFilter(index)}
+              >
+                <View className={`w-5 h-5 border rounded mr-2 justify-center items-center ${filter.checked ? 'bg-black border-black' : 'border-gray-300'}`}>
+                  {filter.checked && (
+                    <Ionicons name="checkmark" size={16} color="#fff" />
+                  )}
+                </View>
+                <Text className="text-sm">{filter.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </ScrollView>
 
         <View className="flex-row p-4 border-t border-gray-200">
@@ -336,8 +387,274 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           onPress={toggleDrawer}
         />
       )}
+
+      {/* Sort Modal - New Implementation */}
+      <Modal
+        visible={showSortOptions}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSortOptions(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSortOptions(false)}
+        >
+          <View style={styles.sortModalContainer} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sort By</Text>
+              <TouchableOpacity onPress={() => setShowSortOptions(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView>
+              {sortOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={styles.sortOption}
+                  onPress={() => {
+                    setSelectedSort(option.label);
+                    setShowSortOptions(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.sortOptionText,
+                    selectedSort === option.label && styles.selectedText
+                  ]}>
+                    {option.label}
+                  </Text>
+                  {selectedSort === option.label && (
+                    <Ionicons name="checkmark" size={20} color="#ec4899" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      
+      {/* Filter Modal - New Implementation */}
+      <Modal
+        visible={drawerOpen}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={toggleDrawer}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={toggleDrawer}
+        >
+          <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Products</Text>
+              <TouchableOpacity onPress={toggleDrawer}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
+              {/* Rating Filters */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Customer Ratings</Text>
+                {ratingFilters.map((filter, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.filterOption}
+                    onPress={() => toggleRatingFilter(index)}
+                  >
+                    <View style={[
+                      styles.checkbox,
+                      filter.checked && styles.checkboxChecked
+                    ]}>
+                      {filter.checked && <Ionicons name="checkmark" size={16} color="#fff" />}
+                    </View>
+                    <Text style={styles.filterOptionText}>{filter.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={clearAllFilters}
+              >
+                <Text style={styles.clearButtonText}>CLEAR ALL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyButton}
+                onPress={toggleDrawer}
+              >
+                <Text style={styles.applyButtonText}>APPLY</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+  },
+  filtersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    width: '48%',
+    justifyContent: 'center',
+  },
+  filterText: {
+    marginRight: 4,
+    fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+  },
+  sortModalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '50%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalContent: {
+    padding: 16,
+  },
+  filterSection: {
+    marginBottom: 20,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#ec4899',
+    borderColor: '#ec4899',
+  },
+  filterOptionText: {
+    fontSize: 14,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  sortOptionText: {
+    fontSize: 16,
+  },
+  selectedText: {
+    color: '#ec4899',
+    fontWeight: '500',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  clearButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 4,
+  },
+  clearButtonText: {
+    fontWeight: '500',
+  },
+  applyButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 12,
+    marginLeft: 8,
+    backgroundColor: '#000',
+    borderRadius: 4,
+  },
+  applyButtonText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+});
 
 export default SearchAndFilter;

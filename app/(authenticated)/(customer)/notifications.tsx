@@ -7,9 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useNotificationStore } from "../../store/NotificationStore";
-import Icon from "react-native-vector-icons/Ionicons";
+import { useNotificationStore } from "../../../store/NotificationStore";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { ChevronLeft } from "react-native-feather";
+import { router } from "expo-router";
 
 export default function NotificationScreen() {
   const {
@@ -24,6 +26,7 @@ export default function NotificationScreen() {
   } = useNotificationStore();
 
   useEffect(() => {
+    // These functions will now use the updated API endpoints with user ID
     fetchNotifications();
     fetchNotificationCount();
   }, []);
@@ -32,7 +35,12 @@ export default function NotificationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View className="flex-row items-center mb-6">
+      <TouchableOpacity onPress={()=> router.back()} className="mr-4">
+          <ChevronLeft width={22} height={22} color="#555" />
+        </TouchableOpacity>
       <Text style={styles.header}>Notifications</Text>
+      </View>
       <View
         style={{
           display: "flex",
@@ -78,7 +86,7 @@ export default function NotificationScreen() {
               {deletingId === item.id ? (
                 <ActivityIndicator />
               ) : (
-                <Icon name="close-circle" size={20} color="#ff4d4f" />
+                <Ionicons name="close-circle" size={20} color="#ff4d4f" />
               )}
             </TouchableOpacity>
           </View>
@@ -90,7 +98,7 @@ export default function NotificationScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#fff" },
-  header: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  header: { fontSize: 18, fontWeight: "bold"},
   notificationItem: {
     flexDirection: "row",
     alignItems: "center",

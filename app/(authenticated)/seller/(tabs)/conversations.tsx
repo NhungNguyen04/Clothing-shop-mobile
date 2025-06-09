@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Conversation, getSellerConversations, getLastMessage, Message } from '../../../../services/chat';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,27 +69,47 @@ export default function SellerConversationsScreen() {
         style={styles.conversationItem}
         onPress={() => navigateToConversation(item.id)}
       >
-        <View style={styles.avatar}>
-          <Ionicons name="person-circle" size={50} color="#555" />
-        </View>
-        <View style={styles.conversationContent}>
-          <Text style={styles.participantName}>
-            {customer?.name || 'Unknown Customer'}
-          </Text>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {lastMessage?.content || 'No messages yet'}
-          </Text>
-        </View>
-        <View style={styles.timeContainer}>
-          {lastMessage && (
-            <Text style={styles.timeText}>
-              {formatDate(lastMessage.createdAt)}
+          <View style={styles.avatar}>
+            {customer?.image ? (
+              <Image
+                source={{ uri: customer.image }}
+                style={{ width: 50, height: 50, borderRadius: 25 }}
+              />
+            ) : (
+              <View
+                style={{
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            backgroundColor: '#e0e0e0',
+            justifyContent: 'center',
+            alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 18, color: '#555', fontWeight: 'bold' }}>
+            {customer?.name?.[0]?.toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.conversationContent}>
+            <Text style={styles.participantName}>
+              {customer?.name || 'Unknown Customer'}
             </Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {lastMessage?.content || 'No messages yet'}
+            </Text>
+          </View>
+          <View style={styles.timeContainer}>
+            {lastMessage && (
+              <Text style={styles.timeText}>
+                {formatDate(lastMessage.createdAt)}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      );
+    };
 
   if (loading) {
     return (
