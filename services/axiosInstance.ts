@@ -1,17 +1,17 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 
 const getBaseUrl = () => {
   // For Android emulators, localhost points to the emulator's own loopback interface
   // 10.0.2.2 is the special IP that allows Android emulator to access the host machine
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:3300';
+  if (Platform.OS === "android") {
+    return "http://10.0.2.2:3300";
+  } else if (Platform.OS === "ios") {
+    return "http://localhost:3300";
   }
-  else if (Platform.OS === 'ios') {
-    return 'http://localhost:3300';
-  }
-  return 'http://localhost:3300';
+  return "http://localhost:3300";
 };
 
 const axiosInstance = axios.create({
@@ -33,7 +33,8 @@ axiosInstance.interceptors.request.use(
         safeData
       );
 
-      const token = await AsyncStorage.getItem("token");
+      const token = await SecureStore.getItemAsync("userToken");
+      console.log("🔐 Using token:", token);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
