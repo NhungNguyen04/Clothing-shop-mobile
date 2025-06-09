@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, Image, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  Image,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
   const { user, logout, token } = useAuth();
@@ -13,9 +21,9 @@ export default function ProfileScreen() {
     setIsLoading(true);
     try {
       await logout();
-      router.replace('/sign-in');
+      router.replace("/sign-in");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -25,9 +33,9 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
         <Text className="text-gray-600 mb-4">You are not logged in</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           className="bg-pink-500 px-6 py-3 rounded-lg"
-          onPress={() => router.push('/sign-in')}
+          onPress={() => router.push("/sign-in")}
         >
           <Text className="text-white font-medium">Go to Sign In</Text>
         </TouchableOpacity>
@@ -40,8 +48,14 @@ export default function ProfileScreen() {
       <ScrollView>
         <View className="bg-white p-6 items-center shadow-sm mb-4">
           <View className="w-24 h-24 rounded-full bg-gray-200 mb-4 overflow-hidden">
-            <Image 
-              source={{ uri: 'https://ui-avatars.com/api/?name=' + encodeURI(user.name) + '&background=random' }} 
+            <Image
+              source={{
+                uri:
+                  user.image ||
+                  "https://ui-avatars.com/api/?name=" +
+                    encodeURI(user.name) +
+                    "&background=random",
+              }}
               className="w-full h-full"
             />
           </View>
@@ -51,16 +65,20 @@ export default function ProfileScreen() {
 
         <View className="bg-white p-6 mb-4">
           <Text className="text-lg font-bold text-gray-800 mb-4">Account</Text>
-          
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100"
-            onPress={() => router.navigate('/(authenticated)/(customer)/(tabs)/orders')}>
+
+          <TouchableOpacity
+            className="flex-row items-center py-4 border-b border-gray-100"
+            onPress={() =>
+              router.navigate("/(authenticated)/(customer)/(tabs)/orders")
+            }
+          >
             <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
               <Text className="text-blue-500 font-bold">🛒</Text>
             </View>
             <Text className="flex-1 text-gray-700">My Orders</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
             <View className="w-8 h-8 rounded-full bg-green-100 items-center justify-center mr-3">
               <Text className="text-green-500 font-bold">💖</Text>
@@ -68,9 +86,12 @@ export default function ProfileScreen() {
             <Text className="flex-1 text-gray-700">Wishlist</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/(customer)/address/page')}
+
+          <TouchableOpacity
+            className="flex-row items-center py-4"
+            onPress={() =>
+              router.navigate("/(authenticated)/(customer)/address/page")
+            }
           >
             <View className="w-8 h-8 rounded-full bg-purple-100 items-center justify-center mr-3">
               <Text className="text-purple-500 font-bold">🏠</Text>
@@ -82,15 +103,20 @@ export default function ProfileScreen() {
 
         <View className="bg-white p-6 mb-4">
           <Text className="text-lg font-bold text-gray-800 mb-4">Settings</Text>
-          
-          <TouchableOpacity className="flex-row items-center py-4 border-b border-gray-100">
+
+          <TouchableOpacity
+            className="flex-row items-center py-4 border-b border-gray-100"
+            onPress={() =>
+              router.navigate("/(authenticated)/(customer)/updateInfor/page")
+            }
+          >
             <View className="w-8 h-8 rounded-full bg-yellow-100 items-center justify-center mr-3">
               <Text className="text-yellow-500 font-bold">⚙️</Text>
             </View>
             <Text className="flex-1 text-gray-700">Account Settings</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center py-4">
             <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
               <Text className="text-red-500 font-bold">🔔</Text>
@@ -98,8 +124,11 @@ export default function ProfileScreen() {
             <Text className="flex-1 text-gray-700">Notifications</Text>
             <Text className="text-gray-400">→</Text>
           </TouchableOpacity>
-           <TouchableOpacity className="flex-row items-center py-4"
-            onPress={() => router.navigate('/(authenticated)/(customer)/sellerRegister/page')}
+          <TouchableOpacity
+            className="flex-row items-center py-4"
+            onPress={() =>
+              router.navigate("/(authenticated)/(customer)/sellerRegister/page")
+            }
           >
             <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
               <Text className="text-red-500 font-bold">🧑</Text>
@@ -110,7 +139,7 @@ export default function ProfileScreen() {
         </View>
 
         <View className="p-6">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-pink-500 py-4 rounded-lg w-full items-center"
             onPress={handleLogout}
             disabled={isLoading}
