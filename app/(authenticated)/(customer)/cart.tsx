@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { router, useNavigation } from "expo-router"
 import { ChevronLeft } from "react-native-feather"
 import { useCartStore } from "@/store/CartStore"
+import { useFocusEffect } from "@react-navigation/native"
 
 export default function CartScreen() {
   const { 
@@ -19,7 +20,9 @@ export default function CartScreen() {
     updateQuantity, 
     removeItem, 
     removeSellerItems, 
-    clearCartError 
+    clearCartError,
+    getUserCart,
+    refreshCart
   } = useCartStore();
 
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
@@ -57,6 +60,18 @@ export default function CartScreen() {
       Alert.alert("Error", error, [{ text: "OK", onPress: clearCartError }])
     }
   }, [error, clearCartError])
+
+  // Fetch cart data when the component mounts
+  useEffect(() => {
+    getUserCart();
+  }, []);
+
+  // Also fetch cart data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshCart();
+    }, [refreshCart])
+  );
 
   const toggleItemSelection = useCallback((itemId: string, sellerId: string) => {
     setSelectedItems(prev => {
@@ -155,13 +170,13 @@ export default function CartScreen() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      await useCartStore.getState().refreshCart()
+      await refreshCart()
     } catch (error) {
       console.error('Error refreshing cart:', error)
     } finally {
       setIsRefreshing(false)
     }
-  }, [])
+  }, [refreshCart])
 
   // Show loading during initial load or when isLoading is true
   const showLoading = isLoading

@@ -15,7 +15,7 @@ import {
   ToastAndroid,
   Platform,
 } from "react-native";
-import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
+import { useRoute, RouteProp, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Star, ChevronLeft, MessageCircle } from 'react-native-feather';
@@ -44,6 +44,7 @@ export default function ProductDetailScreen() {
     isLoading: cartIsLoading, 
     error: cartError,
     clearCartError,
+    refreshCart,
   } = useCartStore();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -99,6 +100,21 @@ export default function ProductDetailScreen() {
     }
   }, [cartError, clearCartError]);
 
+  // Refresh cart when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        try {
+          await refreshCart();
+        } catch (err) {
+          console.error("Error refreshing cart:", err);
+        }
+      };
+      
+      loadData();
+    }, [refreshCart])
+  );
+
   const handleSizeSelect = useCallback((size: string) => {
     setSelectedSize(size);
   }, []);
@@ -138,13 +154,17 @@ export default function ProductDetailScreen() {
     try {
       setIsAddingToCart(true);
       await addToCart(id, selectedSize, quantity);
+      
+      // Make sure to refresh cart data after adding item
+      await refreshCart();
+      
       showSuccessToast("Item added to cart successfully!");
     } catch (error) {
       console.error("Add to cart error:", error);
     } finally {
       setIsAddingToCart(false);
     }
-  }, [id, selectedSize, quantity, addToCart]);
+  }, [id, selectedSize, quantity, addToCart, refreshCart]);
 
   const handleChatWithSeller = useCallback(async () => {
     if (!user || !seller) {

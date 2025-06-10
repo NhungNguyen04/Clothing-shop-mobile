@@ -93,7 +93,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleAdminRedirect = (user: User) => {
     if (user.role === 'ADMIN') {
       console.log('User is ADMIN, redirecting to admin dashboard');
-      router.push('/(authenticated)/admin/(tabs)');
+      // Add a slight delay to ensure navigation works properly
+      setTimeout(() => {
+        router.replace('/(authenticated)/admin/(tabs)');
+      }, 100);
     }
   };
 
@@ -122,7 +125,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user.role === 'SELLER' && data.user.id) {
         checkSellerStatus(data.user.id);
       } else if (data.user.role === 'ADMIN') {
-        handleAdminRedirect(data.user);
+        // Ensure this runs with a slight delay after state is updated
+        setTimeout(() => {
+          handleAdminRedirect(data.user);
+        }, 100);
       }
     } catch (error) {
       console.log('Failed to store auth data', error);

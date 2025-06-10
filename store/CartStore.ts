@@ -88,11 +88,19 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
       
       const cart = await getCartByUserId();
-      const itemsBySeller = get().organizeItemsBySeller(cart);
       
-      set({ cart, itemsBySeller, isLoading: false });
-      return cart;
+      // Make sure we have valid cart data and avoid setting null values
+      if (cart && cart.cartItems) {
+        const itemsBySeller = get().organizeItemsBySeller(cart);
+        set({ cart, itemsBySeller, isLoading: false });
+        return cart;
+      } else {
+        console.warn("Received empty cart data from API");
+        set({ isLoading: false });
+        return null;
+      }
     } catch (error) {
+      console.error("Error fetching cart:", error);
       set({ 
         error: error instanceof Error ? error.message : 'An unknown error occurred', 
         isLoading: false 
@@ -102,7 +110,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   
   refreshCart: async () => {
-    await get().getUserCart();
+    console.log("Refreshing cart data...");
+    return await get().getUserCart();
   },
   
   addToCart: async (productId: string, size: string, quantity: number) => {
