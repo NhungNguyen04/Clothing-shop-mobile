@@ -11,6 +11,9 @@ interface AuthState {
   isSeller: boolean;
   seller: Seller | null;
   
+  // Add admin property
+  isAdmin: boolean;
+  
   // Actions
   setAuth: (user: User, token: string) => void;
   setSeller: (seller: Seller | null) => void;
@@ -25,12 +28,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSeller: false,
   seller: null,
+  isAdmin: false,
 
   setAuth: (user, token) => set({ 
     user, 
     token,
-    isAuthenticated: !!user && !!token ,
-    isSeller: user?.role === 'SELLER'
+    isAuthenticated: !!user && !!token,
+    isSeller: user?.role === 'SELLER',
+    isAdmin: user?.role === 'ADMIN'
   }),
   
   setSeller: (seller) => set({ 
@@ -43,7 +48,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     token: null,
     isAuthenticated: false,
     isSeller: false,
-    seller: null
+    seller: null,
+    isAdmin: false
   }),
   
   updateUser: async (updateData) => {

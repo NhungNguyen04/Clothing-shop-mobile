@@ -25,6 +25,7 @@ const MAPPING = {
   'bell': 'notifications',
   'message': 'message',
   'list.clipboard.fill': 'list',
+  'person.2.arrow.trianglehead.counterclockwise': 'group',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

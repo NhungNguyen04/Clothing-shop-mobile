@@ -12,7 +12,8 @@ type AuthContextType = {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  isSeller: boolean; // Add isSeller property
+  isSeller: boolean;
+  isAdmin: boolean; // Add isAdmin property
   login: (data: { user: User; access_token: string }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setSeller = useAuthStore((state) => state.setSeller);
   const isSeller = useAuthStore((state) => state.isSeller);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
   const router = useRouter();
 
   useEffect(() => {
@@ -87,29 +89,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Function to redirect admin users
+  const handleAdminRedirect = (user: User) => {
+    if (user.role === 'ADMIN') {
+      console.log('User is ADMIN, redirecting to admin dashboard');
+      router.push('/(authenticated)/admin/(tabs)');
+    }
+  };
+
   useEffect(() => {
-    // When user logs in and has role SELLER, check seller status
-    if (user?.id && user?.role === "SELLER") {
-      console.log("User is a SELLER, checking seller status");
-      checkSellerStatus(user.id);
+    // When user logs in, check roles and redirect appropriately
+    if (user?.id) {
+      if (user.role === 'SELLER') {
+        console.log('User is a SELLER, checking seller status');
+        checkSellerStatus(user.id);
+      } else if (user.role === 'ADMIN') {
+        handleAdminRedirect(user);
+      }
     }
   }, [user]);
 
   const login = async (data: { user: User; access_token: string }) => {
     try {
-      await SecureStore.setItemAsync("userToken", data.access_token);
-      await SecureStore.setItemAsync("userData", JSON.stringify(data.user));
+      await SecureStore.setItemAsync('userToken', data.access_token);
+      await SecureStore.setItemAsync('userData', JSON.stringify(data.user));
 
       setToken(data.access_token);
       setUser(data.user);
       setAuth(data.user, data.access_token);
 
-      // Check if user is a seller and redirect if necessary
-      if (data.user.role === "SELLER" && data.user.id) {
+      // Check role and redirect if necessary
+      if (data.user.role === 'SELLER' && data.user.id) {
         checkSellerStatus(data.user.id);
+      } else if (data.user.role === 'ADMIN') {
+        handleAdminRedirect(data.user);
       }
     } catch (error) {
-      console.log("Failed to store auth data", error);
+      console.log('Failed to store auth data', error);
     }
   };
 
@@ -132,7 +148,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         token,
         isLoading,
-        isSeller, // Expose isSeller to the context
+        isSeller,
+        isAdmin, // Expose isAdmin to the context
         login,
         logout,
         setUser,

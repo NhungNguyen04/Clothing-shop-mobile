@@ -1,8 +1,9 @@
 import * as WebBrowser from "expo-web-browser"
 import { Linking } from "react-native"
 
-// Hardcode the API URL instead of using process.env
-const API_URL = "https://clothing-shop-be-production.up.railway.app"
+// Change from deployed URL to local backend URL
+// Use your machine's local IP address instead of localhost
+const API_URL = "http://10.0.2.2:3000" // Replace X with your actual IP address's last number
 const DEEP_LINK_SCHEME = "nh-clothing://" 
 
 export class AuthService {
